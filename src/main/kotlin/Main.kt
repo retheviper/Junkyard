@@ -1,3 +1,7 @@
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -42,6 +46,7 @@ fun MainScreen() {
                 ) {
                     Text(Screen.Archive.title)
                 }
+
                 Button(
                     onClick = { navController.navigate(Screen.RarToZip.name) },
                     modifier = Modifier.fillMaxWidth().padding(8.dp)
@@ -50,7 +55,12 @@ fun MainScreen() {
                 }
             }
 
-            NavHost(navController, startDestination = Screen.Archive.name) {
+            NavHost(
+                navController,
+                startDestination = Screen.Archive.name,
+                enterTransition = { slideInHorizontally() + fadeIn() },
+                exitTransition = { slideOutHorizontally() + fadeOut() }
+            ) {
                 composable(Screen.Archive.name) { ArchiveView() }
                 composable(Screen.RarToZip.name) { RarToZipView() }
             }

@@ -44,24 +44,10 @@ class ArchiveViewModel : ViewModel() {
                             ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
                                 if (isParentDirectoryIncluded.value) {
                                     // Include the parent directory
-                                    Files.walk(subDir)
-                                        .filter { Files.isRegularFile(it) }
-                                        .forEach { file ->
-                                            val zipEntry = basePath.relativize(file).toString()
-                                            zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                                            Files.copy(file, zipOutputStream)
-                                            zipOutputStream.closeEntry()
-                                        }
+                                    zipDirectory(subDir, basePath, zipOutputStream)
                                 } else {
                                     // Include only files in the subdirectory
-                                    Files.walk(subDir, 1)
-                                        .filter { Files.isRegularFile(it) }
-                                        .forEach { file ->
-                                            val zipEntry = file.fileName.toString()
-                                            zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                                            Files.copy(file, zipOutputStream)
-                                            zipOutputStream.closeEntry()
-                                        }
+                                    zipFilesOnly(subDir, zipOutputStream)
                                 }
                             }
                         }
@@ -71,5 +57,27 @@ class ArchiveViewModel : ViewModel() {
             }
         }
 
+    }
+
+    private fun zipDirectory(subDir: Path?, basePath: Path, zipOutputStream: ZipOutputStream) {
+        Files.walk(subDir)
+            .filter { Files.isRegularFile(it) }
+            .forEach { file ->
+                val zipEntry = basePath.relativize(file).toString()
+                zipOutputStream.putNextEntry(ZipEntry(zipEntry))
+                Files.copy(file, zipOutputStream)
+                zipOutputStream.closeEntry()
+            }
+    }
+
+    private fun zipFilesOnly(subDir: Path?, zipOutputStream: ZipOutputStream) {
+        Files.walk(subDir, 1)
+            .filter { Files.isRegularFile(it) }
+            .forEach { file ->
+                val zipEntry = file.fileName.toString()
+                zipOutputStream.putNextEntry(ZipEntry(zipEntry))
+                Files.copy(file, zipOutputStream)
+                zipOutputStream.closeEntry()
+            }
     }
 }

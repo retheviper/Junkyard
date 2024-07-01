@@ -41,38 +41,46 @@ class RarToZipViewModel : ViewModel() {
                     Files.walk(basePath, 1)
                         .filter { Files.isDirectory(it) && it != basePath }
                         .forEach { subDir ->
-                            Files.walk(subDir)
-                                .filter { it.toString().endsWith(".rar") }
-                                .forEach convert@{ rarFile ->
-                                    val destinationFolder = subDir.resolve("unrar_${rarFile.fileName}")
-                                    Files.createDirectory(destinationFolder)
-                                    runCatching { Junrar.extract(rarFile.toFile(), destinationFolder.toFile()) }
-                                        .onFailure {
-                                            destinationFolder.toFile().deleteRecursively()
-                                            _failedFiles.value += 1
-                                            return@convert
-                                        }
-
-                                    val zipFilePath = subDir.resolve("${rarFile.fileName.nameWithoutExtension}.zip")
-                                    ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
-                                        Files.walk(destinationFolder)
-                                            .filter { Files.isRegularFile(it) }
-                                            .forEach { file ->
-                                                val zipEntry = destinationFolder.relativize(file).toString()
-                                                zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                                                Files.copy(file, zipOutputStream)
-                                                zipOutputStream.closeEntry()
-                                            }
-                                    }
-
-                                    destinationFolder.toFile().deleteRecursively()
-                                    _convertedFiles.value += 1
-                                }
+                            convert(subDir)
                         }
                 } finally {
                     _isConverting.value = false
                 }
             }
+        }
+    }
+
+    private fun convert(subDir: Path) {
+        Files.walk(subDir)
+            .filter { it.toString().endsWith(".rar") }
+            .forEach { rarFile ->
+                val destinationFolder = subDir.resolve("unrar_${rarFile.fileName}")
+                Files.createDirectory(destinationFolder)
+                runCatching { Junrar.extract(rarFile.toFile(), destinationFolder.toFile()) }
+                    .onFailure {
+                        destinationFolder.toFile().deleteRecursively()
+                        _failedFiles.value += 1
+                        return@forEach
+                    }
+
+                zipFiles(subDir, rarFile, destinationFolder)
+
+                destinationFolder.toFile().deleteRecursively()
+                _convertedFiles.value += 1
+            }
+    }
+
+    private fun zipFiles(subDir: Path, rarFile: Path, destinationFolder: Path) {
+        val zipFilePath = subDir.resolve("${rarFile.fileName.nameWithoutExtension}.zip")
+        ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
+            Files.walk(destinationFolder)
+                .filter { Files.isRegularFile(it) }
+                .forEach { file ->
+                    val zipEntry = destinationFolder.relativize(file).toString()
+                    zipOutputStream.putNextEntry(ZipEntry(zipEntry))
+                    Files.copy(file, zipOutputStream)
+                    zipOutputStream.closeEntry()
+                }
         }
     }
 }

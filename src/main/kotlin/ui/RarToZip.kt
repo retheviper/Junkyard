@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Text
@@ -54,20 +55,25 @@ fun RarToZipView(
         ) {
             Column {
                 Text("Selected path: ${path.value?.toString() ?: "None"}")
-                Button(
-                    onClick = { launcher.launch() },
-                    content = { Text("Select directory") }
-                )
+
+                Row {
+                    Button(
+                        onClick = { launcher.launch() }
+                    ) {
+                        Text("Select directory")
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Button(
+                        enabled = path.value != null && !isConverting.value,
+                        onClick = { viewModel.onConvertClick() }
+                    ) {
+                        Text("Convert")
+                    }
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            enabled = path.value != null && !isConverting.value,
-            onClick = { viewModel.onConvertClick() },
-            content = { Text("Convert") }
-        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
