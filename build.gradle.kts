@@ -22,9 +22,11 @@ dependencies {
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation("org.jetbrains.androidx.navigation:navigation-compose:2.7.0-alpha07")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0-RC")
     implementation("io.github.vinceglb:filekit-core-jvm:0.6.1")
     implementation("io.github.vinceglb:filekit-compose:0.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0-RC")
+    implementation("com.github.junrar:junrar:7.5.5")
 }
 
 compose.desktop {

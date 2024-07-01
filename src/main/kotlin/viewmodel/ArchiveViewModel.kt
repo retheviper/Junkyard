@@ -33,40 +33,42 @@ class ArchiveViewModel : ViewModel() {
     fun onArchiveClick() {
         val basePath = path.value ?: return
 
-
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 _isArchiving.value = true
-                Files.walk(basePath, 1)
-                    .filter { Files.isDirectory(it) && it != basePath }
-                    .forEach { subDir ->
-                        val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
-                        ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
-                            if (isParentDirectoryIncluded.value) {
-                                // Include the parent directory
-                                Files.walk(subDir)
-                                    .filter { Files.isRegularFile(it) }
-                                    .forEach { file ->
-                                        val zipEntry = basePath.relativize(file).toString()
-                                        zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                                        Files.copy(file, zipOutputStream)
-                                        zipOutputStream.closeEntry()
-                                    }
-                            } else {
-                                // Include only files in the subdirectory
-                                Files.walk(subDir, 1)
-                                    .filter { Files.isRegularFile(it) }
-                                    .forEach { file ->
-                                        val zipEntry = file.fileName.toString()
-                                        zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                                        Files.copy(file, zipOutputStream)
-                                        zipOutputStream.closeEntry()
-                                    }
+                try {
+                    Files.walk(basePath, 1)
+                        .filter { Files.isDirectory(it) && it != basePath }
+                        .forEach { subDir ->
+                            val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
+                            ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
+                                if (isParentDirectoryIncluded.value) {
+                                    // Include the parent directory
+                                    Files.walk(subDir)
+                                        .filter { Files.isRegularFile(it) }
+                                        .forEach { file ->
+                                            val zipEntry = basePath.relativize(file).toString()
+                                            zipOutputStream.putNextEntry(ZipEntry(zipEntry))
+                                            Files.copy(file, zipOutputStream)
+                                            zipOutputStream.closeEntry()
+                                        }
+                                } else {
+                                    // Include only files in the subdirectory
+                                    Files.walk(subDir, 1)
+                                        .filter { Files.isRegularFile(it) }
+                                        .forEach { file ->
+                                            val zipEntry = file.fileName.toString()
+                                            zipOutputStream.putNextEntry(ZipEntry(zipEntry))
+                                            Files.copy(file, zipOutputStream)
+                                            zipOutputStream.closeEntry()
+                                        }
+                                }
                             }
                         }
-                    }
+                } finally {
+                    _isArchiving.value = false
+                }
             }
-            _isArchiving.value = false
         }
 
     }
