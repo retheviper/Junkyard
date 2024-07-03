@@ -21,11 +21,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ui.ArchiveView
+import ui.ChangeExtensionView
 import ui.RarToZipView
 
 enum class Screen(val title: String) {
     Archive("Archive"),
-    RarToZip("Rar to Zip")
+    RarToZip("Rar to Zip"),
+    ChangeExtension("Change Extension")
 }
 
 @Composable
@@ -36,7 +38,7 @@ fun MainScreen() {
         Row(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
-                    .width(200.dp)
+                    .width(250.dp)
                     .fillMaxHeight()
                     .padding(8.dp)
             ) {
@@ -53,6 +55,13 @@ fun MainScreen() {
                 ) {
                     Text(Screen.RarToZip.title)
                 }
+
+                Button(
+                    onClick = { navController.navigate(Screen.ChangeExtension.name) },
+                    modifier = Modifier.fillMaxWidth().padding(8.dp)
+                ) {
+                    Text(Screen.ChangeExtension.title)
+                }
             }
 
             NavHost(
@@ -63,6 +72,7 @@ fun MainScreen() {
             ) {
                 composable(Screen.Archive.name) { ArchiveView() }
                 composable(Screen.RarToZip.name) { RarToZipView() }
+                composable(Screen.ChangeExtension.name) { ChangeExtensionView() }
             }
         }
     }
