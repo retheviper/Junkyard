@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sksamuel.scrimage.format.Format
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import viewmodel.ProcessViewModel
 
