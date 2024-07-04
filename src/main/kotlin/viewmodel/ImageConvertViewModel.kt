@@ -61,16 +61,15 @@ class ImageConvertViewModel : ProcessViewModel() {
                         }
                         .forEach { file ->
                             val data = Files.readAllBytes(file)
+
                             if (fromFormat.value != FormatDetector.detect(data).getOrNull()) {
                                 return@forEach
                             }
 
-                            val convertedFilePath =
-                                file.resolveSibling(
-                                    "${file.nameWithoutExtension}.${
-                                        toFormat.value.toExtension().first()
-                                    }"
-                                )
+                            val convertedFilePath = file.resolveSibling(
+                                "${file.nameWithoutExtension}.${toFormat.value.toExtension().first()}"
+                            )
+
                             runCatching {
                                 convertImage(convertedFilePath, data, fromFormat.value, toFormat.value)
                             }.onSuccess {

@@ -98,11 +98,11 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
 }
 
 @Composable
-fun DropdownMenuBox(
+fun <T : Enum<T>> DropdownMenuBox(
     label: String,
-    selectedItem: Format,
-    items: List<Format>,
-    onItemSelected: (Format) -> Unit,
+    selectedItem: T,
+    items: List<T>,
+    onItemSelected: (T) -> Unit,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit
 ) {
