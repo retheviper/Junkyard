@@ -30,20 +30,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sksamuel.scrimage.format.Format
-import io.github.vinceglb.filekit.compose.PickerResultLauncher
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import viewmodel.ProcessViewModel
 
 @Composable
-fun ProcessesSection(
-    viewModel: ProcessViewModel,
-    actionButtonText: String
-) {
+fun ProcessesSection(viewModel: ProcessViewModel) {
     val path = viewModel.path.collectAsState()
     val isProcessing = viewModel.isProcessing.collectAsState()
     val processed = viewModel.processed.collectAsState()
     val failed = viewModel.failed.collectAsState()
-    val launcher = getDirectoryPickerLauncher(viewModel)
+    val launcher = rememberDirectoryPickerLauncher(
+        title = "Select a directory",
+        initialDirectory = null,
+        platformSettings = null
+    ) { directory ->
+        directory?.let { viewModel.setPath(it.file.toPath()) }
+    }
 
     Column(
         modifier = Modifier
@@ -80,7 +82,7 @@ fun ProcessesSection(
                         enabled = path.value != null && !isProcessing.value,
                         onClick = viewModel::onProcessClick
                     ) {
-                        Text(actionButtonText)
+                        Text("Process")
                     }
                 }
             }
@@ -93,19 +95,6 @@ fun ProcessesSection(
         }
     }
 }
-
-@Composable
-fun getDirectoryPickerLauncher(viewModel: ProcessViewModel): PickerResultLauncher {
-    return rememberDirectoryPickerLauncher(
-        title = "Select a directory",
-        initialDirectory = null,
-        platformSettings = null
-    ) { directory ->
-        directory?.let { viewModel.setPath(it.file.toPath()) }
-    }
-}
-
-
 
 @Composable
 fun DropdownMenuBox(

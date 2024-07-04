@@ -73,9 +73,6 @@ fun ImageConvertView() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        ProcessesSection(
-            viewModel,
-            actionButtonText = "Convert"
-        )
+        ProcessesSection(viewModel)
     }
 }

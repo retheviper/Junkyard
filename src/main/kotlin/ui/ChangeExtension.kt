@@ -57,7 +57,7 @@ fun ChangeExtensionView() {
 
 
         Row {
-            CustomTextField(
+            ExtensionTextField(
                 label = "From extension:",
                 value = fromExtension.value,
                 onValueChange = { viewModel.setFromExtension(it) }
@@ -65,22 +65,19 @@ fun ChangeExtensionView() {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            CustomTextField(
+            ExtensionTextField(
                 label = "To extension:",
                 value = toExtension.value,
                 onValueChange = { viewModel.setToExtension(it) }
             )
         }
 
-        ProcessesSection(
-            viewModel,
-            actionButtonText = "Convert"
-        )
+        ProcessesSection(viewModel)
     }
 }
 
 @Composable
-fun CustomTextField(
+fun ExtensionTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit

@@ -28,9 +28,6 @@ fun RarToZipView() {
 
         Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
 
-        ProcessesSection(
-            viewModel,
-            actionButtonText = "Convert"
-        )
+        ProcessesSection(viewModel)
     }
 }

@@ -51,9 +51,6 @@ fun ArchiveView() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        ProcessesSection(
-            viewModel,
-            actionButtonText = "Archive"
-        )
+        ProcessesSection(viewModel)
     }
 }
