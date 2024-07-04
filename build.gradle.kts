@@ -31,6 +31,7 @@ dependencies {
     implementation("com.github.junrar:junrar:7.5.5")
     implementation("com.sksamuel.scrimage:scrimage-core:4.1.3")
     implementation("com.sksamuel.scrimage:scrimage-webp:4.1.3")
+    implementation("org.slf4j:slf4j-simple:2.0.13")
 }
 
 compose.desktop {

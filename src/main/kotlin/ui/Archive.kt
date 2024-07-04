@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import org.koin.compose.koinInject
 import viewmodel.ArchiveViewModel
@@ -41,9 +43,14 @@ fun ArchiveView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Archive a directory")
+        Text(
+            text = "Archive subdirectories",
+            fontSize = 26.sp
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Divider()
 
         Row(
             modifier = Modifier

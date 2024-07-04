@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sksamuel.scrimage.format.Format
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import org.koin.compose.koinInject
@@ -63,9 +65,14 @@ fun ImageConvertView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Convert Image")
+        Text(
+            text = "Convert images to different formats",
+            fontSize = 26.sp
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Divider()
 
         Text("Converted files: ${convertedFiles.value}")
         Text("Failed files: ${failedFiles.value}")
