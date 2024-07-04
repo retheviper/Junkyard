@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import org.koin.compose.koinInject
 import viewmodel.ChangeExtensionViewModel

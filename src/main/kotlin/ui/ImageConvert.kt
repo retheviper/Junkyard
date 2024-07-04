@@ -32,11 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sksamuel.scrimage.format.Format
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import org.koin.compose.koinInject
-import viewmodel.ArchiveViewModel
 import viewmodel.ImageConvertViewModel
 
 @Composable
