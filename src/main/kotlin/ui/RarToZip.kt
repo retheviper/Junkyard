@@ -26,8 +26,8 @@ fun RarToZipView() {
     val viewModel: RarToZipViewModel = koinInject()
     val path = viewModel.path.collectAsState()
     val isConverting = viewModel.isConverting.collectAsState()
-    val convertedFiles = viewModel.convertedFiles.collectAsState()
-    val failedFiles = viewModel.failedFiles.collectAsState()
+    val convertedFiles = viewModel.processed.collectAsState()
+    val failedFiles = viewModel.failed.collectAsState()
 
     val launcher = rememberDirectoryPickerLauncher(
         title = "Select a directory",
@@ -51,6 +51,8 @@ fun RarToZipView() {
 
         Divider()
 
+        Spacer(modifier = Modifier.height(16.dp))
+        
         Text("Converted files: ${convertedFiles.value}")
         Text("Failed files: ${failedFiles.value}")
 

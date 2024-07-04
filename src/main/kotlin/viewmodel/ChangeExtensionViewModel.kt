@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ChangeExtensionViewModel : ViewModel() {
+class ChangeExtensionViewModel : ProcessViewModel() {
     private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
     val path: StateFlow<Path?> = _path
 
@@ -34,7 +34,13 @@ class ChangeExtensionViewModel : ViewModel() {
                         .filter { it.extension.equals(fromExtension, ignoreCase) }
                         .forEach {
                             val newFileName = it.nameWithoutExtension + toExtension
-                            Files.move(it, it.resolveSibling(newFileName))
+                            runCatching {
+                                Files.move(it, it.resolveSibling(newFileName))
+                            }.onSuccess {
+                                incrementProcessed()
+                            }.onFailure {
+                                incrementFailed()
+                            }
                         }
                 } finally {
                     _isConverting.value = false

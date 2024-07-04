@@ -44,8 +44,8 @@ fun ImageConvertView() {
     val viewModel: ImageConvertViewModel = koinInject()
     val path = viewModel.path.collectAsState()
     val isConverting = viewModel.isConverting.collectAsState()
-    val convertedFiles = viewModel.convertedFiles.collectAsState()
-    val failedFiles = viewModel.failedFiles.collectAsState()
+    val convertedFiles = viewModel.processed.collectAsState()
+    val failedFiles = viewModel.failed.collectAsState()
 
     var fromFormatExpanded by remember { mutableStateOf(false) }
     var fromFormat by remember { mutableStateOf(Format.JPEG) }
@@ -73,6 +73,8 @@ fun ImageConvertView() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Divider()
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text("Converted files: ${convertedFiles.value}")
         Text("Failed files: ${failedFiles.value}")

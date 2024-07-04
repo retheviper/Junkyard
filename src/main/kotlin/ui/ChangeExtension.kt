@@ -41,6 +41,8 @@ fun ChangeExtensionView() {
     var ignoreCase by remember { mutableStateOf(true) }
     var fromExtension by remember { mutableStateOf("jpeg") }
     var toExtension by remember { mutableStateOf("jpg") }
+    val processed = viewModel.processed.collectAsState()
+    val failed = viewModel.failed.collectAsState()
 
     val launcher = rememberDirectoryPickerLauncher(
         title = "Select a directory",
@@ -63,6 +65,11 @@ fun ChangeExtensionView() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Divider()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Changed Files: ${processed.value}")
+        Text("Failed Files: ${failed.value}")
 
         Row(
             modifier = Modifier

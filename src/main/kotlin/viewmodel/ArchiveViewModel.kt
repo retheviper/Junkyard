@@ -1,6 +1,5 @@
 package viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.nio.file.Files
 import java.nio.file.Path
@@ -12,7 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ArchiveViewModel : ViewModel() {
+class ArchiveViewModel : ProcessViewModel() {
     private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
     val path: StateFlow<Path?> = _path
 
@@ -41,14 +40,20 @@ class ArchiveViewModel : ViewModel() {
                         .filter { Files.isDirectory(it) && it != basePath }
                         .forEach { subDir ->
                             val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
-                            ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
-                                if (isParentDirectoryIncluded.value) {
-                                    // Include the parent directory
-                                    zipDirectory(subDir, basePath, zipOutputStream)
-                                } else {
-                                    // Include only files in the subdirectory
-                                    zipFilesOnly(subDir, zipOutputStream)
+                            runCatching {
+                                ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
+                                    if (isParentDirectoryIncluded.value) {
+                                        // Include the parent directory
+                                        zipDirectory(subDir, basePath, zipOutputStream)
+                                    } else {
+                                        // Include only files in the subdirectory
+                                        zipFilesOnly(subDir, zipOutputStream)
+                                    }
                                 }
+                            }.onSuccess {
+                                incrementProcessed()
+                            }.onFailure {
+                                incrementFailed()
                             }
                         }
                 } finally {

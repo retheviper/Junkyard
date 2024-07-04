@@ -29,6 +29,8 @@ fun ArchiveView() {
     val isParentDirectoryIncluded = viewModel.isParentDirectoryIncluded.collectAsState()
     val path = viewModel.path.collectAsState()
     val isArchiving = viewModel.isArchiving.collectAsState()
+    val processed = viewModel.processed.collectAsState()
+    val failed = viewModel.failed.collectAsState()
 
     val launcher = rememberDirectoryPickerLauncher(
         title = "Select a directory",
@@ -51,6 +53,11 @@ fun ArchiveView() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Divider()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text("Archived subdirectories: ${processed.value}")
+        Text("Failed subdirectories: ${failed.value}")
 
         Row(
             modifier = Modifier

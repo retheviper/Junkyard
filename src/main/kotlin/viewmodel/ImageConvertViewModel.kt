@@ -24,9 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.core.component.KoinComponent
 
-class ImageConvertViewModel : ViewModel(), KoinComponent {
+class ImageConvertViewModel : ProcessViewModel() {
     private val webpImageReader = WebpImageReader()
     private val imageIOReader = ImageIOReader()
     private val gifWriter = GifWriter.Default
@@ -40,12 +39,6 @@ class ImageConvertViewModel : ViewModel(), KoinComponent {
 
     private val _isConverting = MutableStateFlow(false)
     val isConverting: StateFlow<Boolean> = _isConverting
-
-    private val _convertedFiles = MutableStateFlow(0)
-    val convertedFiles: StateFlow<Int> = _convertedFiles
-
-    private val _failedFiles = MutableStateFlow(0)
-    val failedFiles: StateFlow<Int> = _failedFiles
 
     fun setPath(path: Path) {
         _path.value = path
@@ -76,9 +69,9 @@ class ImageConvertViewModel : ViewModel(), KoinComponent {
                                 convertImage(convertedFilePath, data, fromFormat, toFormat)
                             }.onSuccess {
                                 Files.deleteIfExists(file)
-                                _convertedFiles.value += 1
+                                incrementProcessed()
                             }.onFailure {
-                                _failedFiles.value += 1
+                                incrementFailed()
                             }
                         }
                 } finally {

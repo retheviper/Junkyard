@@ -14,18 +14,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class RarToZipViewModel : ViewModel() {
+class RarToZipViewModel : ProcessViewModel() {
     private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
     val path: StateFlow<Path?> = _path
 
     private val _isConverting = MutableStateFlow(false)
     val isConverting: StateFlow<Boolean> = _isConverting
-
-    private val _convertedFiles = MutableStateFlow(0)
-    val convertedFiles: StateFlow<Int> = _convertedFiles
-
-    private val _failedFiles = MutableStateFlow(0)
-    val failedFiles: StateFlow<Int> = _failedFiles
 
     fun setPath(path: Path) {
         _path.value = path
@@ -59,14 +53,14 @@ class RarToZipViewModel : ViewModel() {
                 runCatching { Junrar.extract(rarFile.toFile(), destinationFolder.toFile()) }
                     .onFailure {
                         destinationFolder.toFile().deleteRecursively()
-                        _failedFiles.value += 1
+                        incrementFailed()
                         return@forEach
                     }
 
                 zipFiles(subDir, rarFile, destinationFolder)
 
                 destinationFolder.toFile().deleteRecursively()
-                _convertedFiles.value += 1
+                incrementProcessed()
             }
     }
 
