@@ -20,7 +20,6 @@ import kotlin.io.path.nameWithoutExtension
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -33,39 +32,47 @@ class ImageConvertViewModel : ProcessViewModel() {
     private val gif2WebpWriter = Gif2WebpWriter.DEFAULT
     private val webpWriter = WebpWriter.DEFAULT.withMultiThread()
 
-    private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
-    val path: StateFlow<Path?> = _path
+    private val _fromFormat = MutableStateFlow(Format.JPEG)
+    val fromFormat: MutableStateFlow<Format> = _fromFormat
 
-    private val _isConverting = MutableStateFlow(false)
-    val isConverting: StateFlow<Boolean> = _isConverting
+    private val _toFormat = MutableStateFlow(Format.WEBP)
+    val toFormat: MutableStateFlow<Format> = _toFormat
 
-    fun setPath(path: Path) {
-        _path.value = path
+    fun setFromFormat(format: Format) {
+        _fromFormat.value = format
     }
 
-    fun onConvertClick(fromFormat: Format, toFormat: Format) {
+    fun setToFormat(format: Format) {
+        _toFormat.value = format
+    }
+
+    override fun onProcessClick() {
         val basePath = path.value ?: return
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _isConverting.value = true
+                toggleProcessing()
                 try {
                     Files.walk(basePath)
                         .filter { file ->
-                            fromFormat.toExtension().any {
+                            fromFormat.value.toExtension().any {
                                 file.extension.equals(it, true)
                             }
                         }
                         .forEach { file ->
                             val data = Files.readAllBytes(file)
-                            if (fromFormat != FormatDetector.detect(data).getOrNull()) {
+                            if (fromFormat.value != FormatDetector.detect(data).getOrNull()) {
                                 return@forEach
                             }
 
                             val convertedFilePath =
-                                file.resolveSibling("${file.nameWithoutExtension}.${toFormat.toExtension().first()}")
+                                file.resolveSibling(
+                                    "${file.nameWithoutExtension}.${
+                                        toFormat.value.toExtension().first()
+                                    }"
+                                )
                             runCatching {
-                                convertImage(convertedFilePath, data, fromFormat, toFormat)
+                                convertImage(convertedFilePath, data, fromFormat.value, toFormat.value)
                             }.onSuccess {
                                 Files.deleteIfExists(file)
                                 incrementProcessed()
@@ -74,7 +81,7 @@ class ImageConvertViewModel : ProcessViewModel() {
                             }
                         }
                 } finally {
-                    _isConverting.value = false
+                    toggleProcessing()
                 }
             }
         }

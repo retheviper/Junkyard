@@ -12,29 +12,19 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ArchiveViewModel : ProcessViewModel() {
-    private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
-    val path: StateFlow<Path?> = _path
-
     private val _isParentDirectoryIncluded = MutableStateFlow(false)
     val isParentDirectoryIncluded: StateFlow<Boolean> = _isParentDirectoryIncluded
-
-    private val _isArchiving = MutableStateFlow(false)
-    val isArchiving: StateFlow<Boolean> = _isArchiving
-
-    fun setPath(path: Path) {
-        _path.value = path
-    }
 
     fun toggleParentDirectory() {
         _isParentDirectoryIncluded.value = !_isParentDirectoryIncluded.value
     }
 
-    fun onArchiveClick() {
+    override fun onProcessClick() {
         val basePath = path.value ?: return
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _isArchiving.value = true
+                toggleProcessing()
                 try {
                     Files.walk(basePath, 1)
                         .filter { Files.isDirectory(it) && it != basePath }
@@ -57,7 +47,7 @@ class ArchiveViewModel : ProcessViewModel() {
                             }
                         }
                 } finally {
-                    _isArchiving.value = false
+                    toggleProcessing()
                 }
             }
         }

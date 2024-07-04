@@ -8,28 +8,16 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.nameWithoutExtension
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class RarToZipViewModel : ProcessViewModel() {
-    private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
-    val path: StateFlow<Path?> = _path
-
-    private val _isConverting = MutableStateFlow(false)
-    val isConverting: StateFlow<Boolean> = _isConverting
-
-    fun setPath(path: Path) {
-        _path.value = path
-    }
-
-    fun onConvertClick() {
+    override fun onProcessClick() {
         val basePath = path.value ?: return
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                _isConverting.value = true
+                toggleProcessing()
                 try {
                     Files.walk(basePath, 1)
                         .filter { Files.isDirectory(it) && it != basePath }
@@ -37,7 +25,7 @@ class RarToZipViewModel : ProcessViewModel() {
                             convert(subDir)
                         }
                 } finally {
-                    _isConverting.value = false
+                    toggleProcessing()
                 }
             }
         }

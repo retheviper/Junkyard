@@ -24,6 +24,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -37,11 +38,11 @@ import ui.ChangeExtensionView
 import ui.ImageConvertView
 import ui.RarToZipView
 
-enum class Screen(val title: String) {
-    Archive("Archive"),
-    RarToZip("Rar to Zip"),
-    ChangeExtension("Change Extension"),
-    ImageConvert("Image Convert")
+enum class Screen(val title: String, val icon: String) {
+    Archive("Archive", "📦"),
+    RarToZip("Rar to Zip", "📚"),
+    ChangeExtension("Change Extension", "🔄"),
+    ImageConvert("Image Convert", "🖼️")
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -72,32 +73,13 @@ fun MainScreen() {
                         sidebarExpanded = false
                     }
             ) {
-                Button(
-                    onClick = { navController.navigate(Screen.Archive.name) },
-                    modifier = Modifier.fillMaxWidth().padding(8.dp)
-                ) {
-                    if (sidebarWidth > 220.dp) Text("📦${Screen.Archive.title}") else Text("📦")
-                }
-
-                Button(
-                    onClick = { navController.navigate(Screen.RarToZip.name) },
-                    modifier = Modifier.fillMaxWidth().padding(8.dp)
-                ) {
-                    if (sidebarWidth > 220.dp) Text("📚${Screen.RarToZip.title}") else Text("📚")
-                }
-
-                Button(
-                    onClick = { navController.navigate(Screen.ChangeExtension.name) },
-                    modifier = Modifier.fillMaxWidth().padding(8.dp)
-                ) {
-                    if (sidebarWidth > 220.dp) Text("🔄${Screen.ChangeExtension.title}") else Text("🔄")
-                }
-
-                Button(
-                    onClick = { navController.navigate(Screen.ImageConvert.name) },
-                    modifier = Modifier.fillMaxWidth().padding(8.dp)
-                ) {
-                    if (sidebarWidth > 220.dp) Text("🖼️${Screen.ImageConvert.title}") else Text("🖼️")
+                Screen.entries.forEach { screen ->
+                    MenuButton(
+                        onClick = { navController.navigate(screen.name) },
+                        icon = screen.icon,
+                        expandedText = screen.title,
+                        sidebarWidth = sidebarWidth
+                    )
                 }
             }
 
@@ -113,6 +95,16 @@ fun MainScreen() {
                 composable(Screen.ImageConvert.name) { ImageConvertView() }
             }
         }
+    }
+}
+
+@Composable
+private fun MenuButton(onClick: () -> Unit, icon: String, expandedText: String, sidebarWidth: Dp) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(8.dp)
+    ) {
+        if (sidebarWidth > 220.dp) Text("$icon $expandedText") else Text(icon)
     }
 }
 
