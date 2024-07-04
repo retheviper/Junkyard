@@ -20,20 +20,23 @@ import androidx.compose.ui.window.application
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import framework.appModules
+import org.koin.core.context.GlobalContext.startKoin
 import ui.ArchiveView
 import ui.ChangeExtensionView
+import ui.ImageConvertView
 import ui.RarToZipView
 
 enum class Screen(val title: String) {
     Archive("Archive"),
     RarToZip("Rar to Zip"),
-    ChangeExtension("Change Extension")
+    ChangeExtension("Change Extension"),
+    ImageConvert("Image Convert")
 }
 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-
     MaterialTheme {
         Row(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -62,6 +65,13 @@ fun MainScreen() {
                 ) {
                     Text(Screen.ChangeExtension.title)
                 }
+
+                Button(
+                    onClick = { navController.navigate(Screen.ImageConvert.name) },
+                    modifier = Modifier.fillMaxWidth().padding(8.dp)
+                ) {
+                    Text(Screen.ImageConvert.title)
+                }
             }
 
             NavHost(
@@ -73,12 +83,16 @@ fun MainScreen() {
                 composable(Screen.Archive.name) { ArchiveView() }
                 composable(Screen.RarToZip.name) { RarToZipView() }
                 composable(Screen.ChangeExtension.name) { ChangeExtensionView() }
+                composable(Screen.ImageConvert.name) { ImageConvertView() }
             }
         }
     }
 }
 
 fun main() = application {
+    startKoin {
+        modules(appModules)
+    }
     Window(onCloseRequest = ::exitApplication) {
         MainScreen()
     }

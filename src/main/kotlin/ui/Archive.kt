@@ -17,14 +17,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
+import org.koin.compose.koinInject
 import viewmodel.ArchiveViewModel
 
 @Composable
-fun ArchiveView(
-    viewModel: ArchiveViewModel = viewModel { ArchiveViewModel() }
-) {
+fun ArchiveView() {
+    val viewModel: ArchiveViewModel = koinInject()
     val isParentDirectoryIncluded = viewModel.isParentDirectoryIncluded.collectAsState()
     val path = viewModel.path.collectAsState()
     val isArchiving = viewModel.isArchiving.collectAsState()

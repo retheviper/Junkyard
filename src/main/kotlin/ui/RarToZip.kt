@@ -15,31 +15,31 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
+import org.koin.compose.koinInject
 import viewmodel.RarToZipViewModel
 
 @Composable
-fun RarToZipView(
-    viewModel: RarToZipViewModel = viewModel { RarToZipViewModel() }
-) {
+fun RarToZipView() {
+    val viewModel: RarToZipViewModel = koinInject()
+    val path = viewModel.path.collectAsState()
+    val isConverting = viewModel.isConverting.collectAsState()
+    val convertedFiles = viewModel.convertedFiles.collectAsState()
+    val failedFiles = viewModel.failedFiles.collectAsState()
+
+    val launcher = rememberDirectoryPickerLauncher(
+        title = "Select a directory",
+        initialDirectory = null,
+        platformSettings = null
+    ) { directory ->
+        directory?.let { viewModel.setPath(it.file.toPath()) }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        val path = viewModel.path.collectAsState()
-        val isConverting = viewModel.isConverting.collectAsState()
-        val convertedFiles = viewModel.convertedFiles.collectAsState()
-        val failedFiles = viewModel.failedFiles.collectAsState()
-
-        val launcher = rememberDirectoryPickerLauncher(
-            title = "Select a directory",
-            initialDirectory = null,
-            platformSettings = null
-        ) { directory ->
-            directory?.let { viewModel.setPath(it.file.toPath()) }
-        }
         Text("Convert RAR files to ZIP")
 
         Spacer(modifier = Modifier.height(16.dp))
