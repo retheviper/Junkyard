@@ -1,7 +1,10 @@
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -13,7 +16,14 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -34,43 +44,60 @@ enum class Screen(val title: String) {
     ImageConvert("Image Convert")
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
+    var sidebarExpanded by remember { mutableStateOf(false) }
+    val sidebarWidth by animateDpAsState(
+        targetValue = if (sidebarExpanded) 250.dp else 75.dp,
+        animationSpec = tween(durationMillis = 300)
+    )
+
     MaterialTheme {
         Row(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
-                    .width(250.dp)
+                    .width(sidebarWidth)
                     .fillMaxHeight()
+                    .background(MaterialTheme.colors.background)
                     .padding(8.dp)
+                    .onPointerEvent(PointerEventType.Move) {
+                        it.changes.first().position
+                    }
+                    .onPointerEvent(PointerEventType.Enter) {
+                        sidebarExpanded = true
+                    }
+                    .onPointerEvent(PointerEventType.Exit) {
+                        sidebarExpanded = false
+                    }
             ) {
                 Button(
                     onClick = { navController.navigate(Screen.Archive.name) },
                     modifier = Modifier.fillMaxWidth().padding(8.dp)
                 ) {
-                    Text(Screen.Archive.title)
+                    if (sidebarWidth > 220.dp) Text("📦${Screen.Archive.title}") else Text("📦")
                 }
 
                 Button(
                     onClick = { navController.navigate(Screen.RarToZip.name) },
                     modifier = Modifier.fillMaxWidth().padding(8.dp)
                 ) {
-                    Text(Screen.RarToZip.title)
+                    if (sidebarWidth > 220.dp) Text("📚${Screen.RarToZip.title}") else Text("📚")
                 }
 
                 Button(
                     onClick = { navController.navigate(Screen.ChangeExtension.name) },
                     modifier = Modifier.fillMaxWidth().padding(8.dp)
                 ) {
-                    Text(Screen.ChangeExtension.title)
+                    if (sidebarWidth > 220.dp) Text("🔄${Screen.ChangeExtension.title}") else Text("🔄")
                 }
 
                 Button(
                     onClick = { navController.navigate(Screen.ImageConvert.name) },
                     modifier = Modifier.fillMaxWidth().padding(8.dp)
                 ) {
-                    Text(Screen.ImageConvert.title)
+                    if (sidebarWidth > 220.dp) Text("🖼️${Screen.ImageConvert.title}") else Text("🖼️")
                 }
             }
 
@@ -93,7 +120,10 @@ fun main() = application {
     startKoin {
         modules(appModules)
     }
-    Window(onCloseRequest = ::exitApplication) {
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "🛠️Junkyard",
+    ) {
         MainScreen()
     }
 }
