@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
+import androidx.compose.material.Checkbox
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -139,5 +140,26 @@ fun DropdownMenuBox(
                 }
             }
         }
+    }
+}
+
+
+@Composable
+fun CheckboxSection(
+    onClick: () -> Unit,
+    checked: Boolean,
+    text: String
+) {
+    Row(
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = { onClick() }
+        )
+        Text(text)
     }
 }

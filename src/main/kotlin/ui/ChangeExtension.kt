@@ -1,6 +1,5 @@
 package ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,13 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Checkbox
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
@@ -42,19 +39,11 @@ fun ChangeExtensionView() {
 
         Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
 
-        Row(
-            modifier = Modifier
-                .clickable { viewModel.toggleIgnoreCase() }
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = ignoreCase.value,
-                onCheckedChange = { viewModel.toggleIgnoreCase() }
-            )
-            Text("Ignore case")
-        }
-
+        CheckboxSection(
+            onClick = { viewModel.toggleIgnoreCase() },
+            checked = ignoreCase.value,
+            text = "Ignore case"
+        )
 
         Row {
             ExtensionTextField(
