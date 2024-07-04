@@ -52,7 +52,7 @@ fun RarToZipView() {
         Divider()
 
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text("Converted files: ${convertedFiles.value}")
         Text("Failed files: ${failedFiles.value}")
 

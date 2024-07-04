@@ -1,6 +1,5 @@
 package viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.format.Format

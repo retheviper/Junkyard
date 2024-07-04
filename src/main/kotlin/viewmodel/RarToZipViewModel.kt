@@ -1,6 +1,5 @@
 package viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.junrar.Junrar
 import java.nio.file.Files
@@ -65,7 +64,7 @@ class RarToZipViewModel : ProcessViewModel() {
     }
 
     private fun zipFiles(subDir: Path, rarFile: Path, destinationFolder: Path) {
-        val zipFilePath = subDir.resolve("${rarFile.fileName.nameWithoutExtension}.zip")
+        val zipFilePath = subDir.resolve("${rarFile.nameWithoutExtension}.zip")
         ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
             Files.walk(destinationFolder)
                 .filter { Files.isRegularFile(it) }
