@@ -1,6 +1,5 @@
 package viewmodel
 
-import androidx.lifecycle.viewModelScope
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.format.Format
 import com.sksamuel.scrimage.format.FormatDetector
@@ -17,10 +16,7 @@ import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import kotlin.jvm.optionals.getOrNull
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -86,43 +82,37 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
     }
 
     override fun onProcessClick() {
-        val basePath = path.value ?: return
-
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                startProcessing()
-                try {
-                    Files.list(basePath)
-                        .filter { file ->
-                            targetFormats.value.any {
-                                it.toExtension().any { extension ->
-                                    file.extension.equals(extension, true)
-                                }
-                            }
+        process { basePath ->
+            Files.list(basePath)
+                .filter { file ->
+                    targetFormats.value.any {
+                        it.toExtension().any { extension ->
+                            file.extension.equals(extension, true)
                         }
-                        .forEach { file ->
-                            val data = Files.readAllBytes(file)
-                            val format = FormatDetector.detect(data).getOrNull()
-
-                            if (!targetFormats.value.contains(format)) {
-                                return@forEach
-                            }
-
-                            val thumbnailPath =
-                                file.resolveSibling("${file.nameWithoutExtension}_thumbnail.${file.extension}")
-
-                            runCatching {
-                                createThumbnail(thumbnailPath, data, requireNotNull(format))
-                            }.onSuccess {
-                                incrementProcessed()
-                            }.onFailure {
-                                incrementFailed()
-                            }
-                        }
-                } finally {
-                    stopProcessing()
+                    }
                 }
-            }
+                .forEach { file ->
+                    val data = Files.readAllBytes(file)
+                    val format = FormatDetector.detect(data).getOrNull()
+
+                    if (!targetFormats.value.contains(format)) {
+                        return@forEach
+                    }
+
+                    val outputExtension = when (imageOutputFormat.value) {
+                        ImageOutputFormat.ORIGINAL -> file.extension
+                        ImageOutputFormat.PNG -> "png"
+                        ImageOutputFormat.JPEG -> "jpg"
+                        ImageOutputFormat.WEBP -> "webp"
+                    }
+
+                    val thumbnailPath =
+                        file.resolveSibling("${file.nameWithoutExtension}_thumbnail.${outputExtension}")
+
+                    processWithCount {
+                        createThumbnail(thumbnailPath, data, requireNotNull(format))
+                    }
+                }
         }
     }
 
@@ -141,7 +131,7 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
                     }
                 } else {
                     val image = toThumbnail(gif.frames.first())
-                    writeThumbnail(thumbnailPath, image)
+                    image.output(getWriter(), thumbnailPath)
                 }
             }
 
@@ -150,7 +140,7 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
                     Format.WEBP -> webpImageReader.read(data)
                     else -> imageIOReader.read(data)
                 }
-                writeThumbnail(thumbnailPath, toThumbnail(image))
+                toThumbnail(image).output(getWriter(), thumbnailPath)
             }
         }
     }
@@ -172,16 +162,5 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
                 else -> throw IllegalArgumentException("Invalid image output format")
             }
         )
-    }
-
-    private fun writeThumbnail(thumbnailPath: Path, image: ImmutableImage) {
-        val writer = getWriter()
-        val outputExtension = when (imageOutputFormat.value) {
-            ImageOutputFormat.ORIGINAL -> thumbnailPath.extension
-            ImageOutputFormat.PNG -> "png"
-            ImageOutputFormat.JPEG -> "jpg"
-            ImageOutputFormat.WEBP -> "webp"
-        }
-        image.output(writer, thumbnailPath.resolveSibling("${thumbnailPath.nameWithoutExtension}.$outputExtension"))
     }
 }

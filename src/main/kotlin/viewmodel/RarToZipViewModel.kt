@@ -1,33 +1,18 @@
 package viewmodel
 
-import androidx.lifecycle.viewModelScope
 import com.github.junrar.Junrar
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.nameWithoutExtension
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class RarToZipViewModel : ProcessViewModel() {
     override fun onProcessClick() {
-        val basePath = path.value ?: return
-
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                startProcessing()
-                try {
-                    Files.walk(basePath, 1)
-                        .filter { Files.isDirectory(it) && it != basePath }
-                        .forEach { subDir ->
-                            convert(subDir)
-                        }
-                } finally {
-                    stopProcessing()
-                }
-            }
+        process { basePath ->
+            Files.walk(basePath, 1)
+                .filter { Files.isDirectory(it) && it != basePath }
+                .forEach { subDir -> convert(subDir) }
         }
     }
 

@@ -1,6 +1,5 @@
 package viewmodel
 
-import androidx.lifecycle.viewModelScope
 import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.format.Format
 import com.sksamuel.scrimage.format.FormatDetector
@@ -16,10 +15,7 @@ import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import kotlin.jvm.optionals.getOrNull
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -43,42 +39,33 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
     }
 
     override fun onProcessClick() {
-        val basePath = path.value ?: return
-
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                startProcessing()
-                try {
-                    Files.walk(basePath)
-                        .filter { file ->
-                            fromFormat.value.toExtension().any {
-                                file.extension.equals(it, true)
-                            }
-                        }
-                        .forEach { file ->
-                            val data = Files.readAllBytes(file)
-
-                            if (fromFormat.value != FormatDetector.detect(data).getOrNull()) {
-                                return@forEach
-                            }
-
-                            val convertedFilePath = file.resolveSibling(
-                                "${file.nameWithoutExtension}.${toFormat.value.toExtension().first()}"
-                            )
-
-                            runCatching {
-                                convertImage(convertedFilePath, data, fromFormat.value, toFormat.value)
-                            }.onSuccess {
-                                Files.deleteIfExists(file)
-                                incrementProcessed()
-                            }.onFailure {
-                                incrementFailed()
-                            }
-                        }
-                } finally {
-                    stopProcessing()
+        process { basePath ->
+            Files.walk(basePath)
+                .filter { file ->
+                    fromFormat.value.toExtension().any {
+                        file.extension.equals(it, true)
+                    }
                 }
-            }
+                .forEach { file ->
+                    val data = Files.readAllBytes(file)
+
+                    if (fromFormat.value != FormatDetector.detect(data).getOrNull()) {
+                        return@forEach
+                    }
+
+                    val convertedFilePath = file.resolveSibling(
+                        "${file.nameWithoutExtension}.${toFormat.value.toExtension().first()}"
+                    )
+
+                    runCatching {
+                        convertImage(convertedFilePath, data, fromFormat.value, toFormat.value)
+                    }.onSuccess {
+                        Files.deleteIfExists(file)
+                        incrementProcessed()
+                    }.onFailure {
+                        incrementFailed()
+                    }
+                }
         }
     }
 

@@ -1,15 +1,11 @@
 package viewmodel
 
-import androidx.lifecycle.viewModelScope
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class ArchiveViewModel : ProcessViewModel() {
     private val _isParentDirectoryIncluded = MutableStateFlow(false)
@@ -20,38 +16,24 @@ class ArchiveViewModel : ProcessViewModel() {
     }
 
     override fun onProcessClick() {
-        val basePath = path.value ?: return
-
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                startProcessing()
-                try {
-                    Files.walk(basePath, 1)
-                        .filter { Files.isDirectory(it) && it != basePath }
-                        .forEach { subDir ->
-                            val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
-                            runCatching {
-                                ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
-                                    if (isParentDirectoryIncluded.value) {
-                                        // Include the parent directory
-                                        zipDirectory(subDir, basePath, zipOutputStream)
-                                    } else {
-                                        // Include only files in the subdirectory
-                                        zipFilesOnly(subDir, zipOutputStream)
-                                    }
-                                }
-                            }.onSuccess {
-                                incrementProcessed()
-                            }.onFailure {
-                                incrementFailed()
+        process { basePath ->
+            Files.walk(basePath, 1)
+                .filter { Files.isDirectory(it) && it != basePath }
+                .forEach { subDir ->
+                    val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
+                    processWithCount {
+                        ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
+                            if (isParentDirectoryIncluded.value) {
+                                // Include the parent directory
+                                zipDirectory(subDir, basePath, zipOutputStream)
+                            } else {
+                                // Include only files in the subdirectory
+                                zipFilesOnly(subDir, zipOutputStream)
                             }
                         }
-                } finally {
-                    stopProcessing()
+                    }
                 }
-            }
         }
-
     }
 
     private fun zipDirectory(subDir: Path?, basePath: Path, zipOutputStream: ZipOutputStream) {

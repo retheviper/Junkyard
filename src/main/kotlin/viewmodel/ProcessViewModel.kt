@@ -1,9 +1,13 @@
 package viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import java.nio.file.Path
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 abstract class ProcessViewModel : ViewModel() {
     private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
@@ -41,4 +45,26 @@ abstract class ProcessViewModel : ViewModel() {
     }
 
     abstract fun onProcessClick()
+
+    protected fun processWithCount(block: () -> Unit) {
+        runCatching { block() }
+            .onSuccess { incrementProcessed() }
+            .onFailure { incrementFailed() }
+    }
+
+    protected fun process(block: (Path) -> Unit) {
+        val basePath = path.value ?: return
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                startProcessing()
+                try {
+                    block(basePath)
+                } finally {
+                    stopProcessing()
+                }
+            }
+        }
+
+    }
 }

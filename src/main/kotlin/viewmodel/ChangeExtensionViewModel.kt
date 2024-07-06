@@ -1,13 +1,9 @@
 package viewmodel
 
-import androidx.lifecycle.viewModelScope
 import java.nio.file.Files
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class ChangeExtensionViewModel : ProcessViewModel() {
     private val _ignoreCase = MutableStateFlow(false)
@@ -32,29 +28,15 @@ class ChangeExtensionViewModel : ProcessViewModel() {
     }
 
     override fun onProcessClick() {
-        val basePath = path.value ?: return
-
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                startProcessing()
-                try {
-                    Files.walk(basePath)
-                        .filter { it.extension.equals(fromExtension.value, ignoreCase.value) }
-                        .forEach {
-                            val newFileName = it.nameWithoutExtension + toExtension.value
-                            runCatching {
-                                Files.move(it, it.resolveSibling(newFileName))
-                            }.onSuccess {
-                                incrementProcessed()
-                            }.onFailure {
-                                incrementFailed()
-                            }
-                        }
-                } finally {
-                    stopProcessing()
+        process { basePath ->
+            Files.walk(basePath)
+                .filter { it.extension.equals(fromExtension.value, ignoreCase.value) }
+                .forEach {
+                    val newFileName = it.nameWithoutExtension + toExtension.value
+                    processWithCount {
+                        Files.move(it, it.resolveSibling(newFileName))
+                    }
                 }
-            }
         }
-
     }
 }
