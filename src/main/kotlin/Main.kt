@@ -1,23 +1,24 @@
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.NavigationRail
 import androidx.compose.material.NavigationRailItem
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -44,25 +45,40 @@ enum class Screen(val title: String, val icon: String) {
     CreateThumbnail("Thumbnail", "📐"),
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    var sidebarExpanded by remember { mutableStateOf(false) }
-    val sidebarWidth by animateDpAsState(
-        targetValue = if (sidebarExpanded) 250.dp else 75.dp,
-        animationSpec = tween(durationMillis = 300)
-    )
+    val isSystemInDarkTheme = isSystemInDarkTheme()
+    var darkMode by remember { mutableStateOf(isSystemInDarkTheme) }
 
-    MyTheme {
+    MyTheme(
+        darkTheme = darkMode,
+    ) {
         Row(modifier = Modifier.fillMaxSize()) {
             NavigationRail {
-                Screen.entries.forEach {
+                Column {
+                    Screen.entries.forEach {
+                        NavigationRailItem(
+                            label = { Text(it.title) },
+                            icon = { Text(it.icon) },
+                            onClick = { navController.navigate(it.name) },
+                            selected = navController.currentDestination?.route == it.name
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
                     NavigationRailItem(
-                        label = { Text(it.title) },
-                        icon = { Text(it.icon) },
-                        onClick = { navController.navigate(it.name) },
-                        selected = navController.currentDestination?.route == it.name
+                        label = { Text("Dark mode") },
+                        icon = {
+                            Switch(
+                                checked = darkMode,
+                                onCheckedChange = { darkMode = it },
+                                modifier = Modifier.padding(bottom = 50.dp)
+                            )
+                        },
+                        onClick = { darkMode = !darkMode },
+                        selected = false
                     )
                 }
             }
