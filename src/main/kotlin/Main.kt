@@ -4,16 +4,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
+import androidx.compose.material.NavigationRail
+import androidx.compose.material.NavigationRailItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,8 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -43,10 +38,10 @@ import ui.RarToZipView
 
 enum class Screen(val title: String, val icon: String) {
     Archive("Archive", "📦"),
-    RarToZip("Rar to Zip", "📚"),
-    ChangeExtension("Change Extension", "🔄"),
-    ImageConvert("Image Convert", "🖼️"),
-    CreateThumbnail("Create Thumbnail", "📐"),
+    RarToZip("to Zip", "📚"),
+    ChangeExtension("Extension", "🔄"),
+    ImageConvert("Convert", "🖼️"),
+    CreateThumbnail("Thumbnail", "📐"),
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -61,28 +56,13 @@ fun MainScreen() {
 
     MyTheme {
         Row(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .width(sidebarWidth)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colors.background)
-                    .padding(8.dp)
-                    .onPointerEvent(PointerEventType.Move) {
-                        it.changes.first().position
-                    }
-                    .onPointerEvent(PointerEventType.Enter) {
-                        sidebarExpanded = true
-                    }
-                    .onPointerEvent(PointerEventType.Exit) {
-                        sidebarExpanded = false
-                    }
-            ) {
-                Screen.entries.forEach { screen ->
-                    MenuButton(
-                        onClick = { navController.navigate(screen.name) },
-                        icon = screen.icon,
-                        expandedText = screen.title,
-                        sidebarWidth = sidebarWidth
+            NavigationRail {
+                Screen.entries.forEach {
+                    NavigationRailItem(
+                        label = { Text(it.title) },
+                        icon = { Text(it.icon) },
+                        onClick = { navController.navigate(it.name) },
+                        selected = navController.currentDestination?.route == it.name
                     )
                 }
             }
