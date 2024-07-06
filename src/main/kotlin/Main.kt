@@ -31,18 +31,22 @@ import androidx.compose.ui.window.application
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import framework.MyTheme
 import framework.appModules
+import java.awt.Dimension
 import org.koin.core.context.GlobalContext.startKoin
 import ui.ArchiveView
 import ui.ChangeExtensionView
 import ui.ImageConvertView
 import ui.RarToZipView
+import ui.CreateThumbnailView
 
 enum class Screen(val title: String, val icon: String) {
     Archive("Archive", "📦"),
     RarToZip("Rar to Zip", "📚"),
     ChangeExtension("Change Extension", "🔄"),
-    ImageConvert("Image Convert", "🖼️")
+    ImageConvert("Image Convert", "🖼️"),
+    CreateThumbnail("Create Thumbnail", "📐"),
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -55,7 +59,7 @@ fun MainScreen() {
         animationSpec = tween(durationMillis = 300)
     )
 
-    MaterialTheme {
+    MyTheme {
         Row(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
@@ -93,6 +97,7 @@ fun MainScreen() {
                 composable(Screen.RarToZip.name) { RarToZipView() }
                 composable(Screen.ChangeExtension.name) { ChangeExtensionView() }
                 composable(Screen.ImageConvert.name) { ImageConvertView() }
+                composable(Screen.CreateThumbnail.name) { CreateThumbnailView() }
             }
         }
     }
@@ -104,7 +109,7 @@ private fun MenuButton(onClick: () -> Unit, icon: String, expandedText: String, 
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(8.dp)
     ) {
-        if (sidebarWidth > 220.dp) Text("$icon $expandedText") else Text(icon)
+        if (sidebarWidth >= 225.dp) Text("$icon $expandedText") else Text(icon)
     }
 }
 
@@ -116,6 +121,7 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "🛠️Junkyard",
     ) {
+        window.minimumSize = Dimension(800, 700)
         MainScreen()
     }
 }

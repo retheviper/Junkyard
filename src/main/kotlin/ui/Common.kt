@@ -20,6 +20,7 @@ import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.Composable
@@ -28,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
@@ -107,6 +110,9 @@ fun <T : Enum<T>> DropdownMenuBox(
 ) {
     Column {
         Text(label)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Box(
             contentAlignment = Alignment.CenterStart,
             modifier = Modifier
@@ -160,5 +166,27 @@ fun CheckboxSection(
             onCheckedChange = { onClick() }
         )
         Text(text)
+    }
+}
+
+@Composable
+fun LabeledTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    Column {
+        Text(label)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(fontSize = 16.sp),
+            shape = RectangleShape,
+            modifier = Modifier.size(250.dp, 50.dp)
+        )
     }
 }

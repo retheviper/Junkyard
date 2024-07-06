@@ -17,7 +17,7 @@ class RarToZipViewModel : ProcessViewModel() {
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                toggleProcessing()
+                startProcessing()
                 try {
                     Files.walk(basePath, 1)
                         .filter { Files.isDirectory(it) && it != basePath }
@@ -25,7 +25,7 @@ class RarToZipViewModel : ProcessViewModel() {
                             convert(subDir)
                         }
                 } finally {
-                    toggleProcessing()
+                    stopProcessing()
                 }
             }
         }

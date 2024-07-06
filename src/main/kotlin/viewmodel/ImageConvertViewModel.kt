@@ -13,6 +13,8 @@ import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.webp.Gif2WebpWriter
 import com.sksamuel.scrimage.webp.WebpImageReader
 import com.sksamuel.scrimage.webp.WebpWriter
+import framework.getSuitableImageWriter
+import framework.toExtension
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.extension
@@ -22,15 +24,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class ImageConvertViewModel : ProcessViewModel() {
-    private val webpImageReader = WebpImageReader()
-    private val imageIOReader = ImageIOReader()
-    private val gifWriter = GifWriter.Default
-    private val pngWriter = PngWriter()
-    private val jpegWriter = JpegWriter.Default
-    private val gif2WebpWriter = Gif2WebpWriter.DEFAULT
-    private val webpWriter = WebpWriter.DEFAULT.withMultiThread()
+class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
+    private val webpImageReader by inject<WebpImageReader>()
+    private val imageIOReader by inject<ImageIOReader>()
+    private val gif2WebpWriter by inject<Gif2WebpWriter>()
 
     private val _fromFormat = MutableStateFlow(Format.JPEG)
     val fromFormat: MutableStateFlow<Format> = _fromFormat
@@ -51,7 +51,7 @@ class ImageConvertViewModel : ProcessViewModel() {
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                toggleProcessing()
+                startProcessing()
                 try {
                     Files.walk(basePath)
                         .filter { file ->
@@ -80,17 +80,10 @@ class ImageConvertViewModel : ProcessViewModel() {
                             }
                         }
                 } finally {
-                    toggleProcessing()
+                    stopProcessing()
                 }
             }
         }
-    }
-
-    private fun Format.toExtension() = when (this) {
-        Format.JPEG -> listOf("jpg", "jpeg")
-        Format.PNG -> listOf("png")
-        Format.WEBP -> listOf("webp")
-        Format.GIF -> listOf("gif")
     }
 
     private fun convertImage(filePath: Path, data: ByteArray, fromFormat: Format, toFormat: Format) {
@@ -101,11 +94,7 @@ class ImageConvertViewModel : ProcessViewModel() {
                     Format.WEBP -> image.output(gif2WebpWriter, filePath)
 
                     else -> {
-                        val writer = when (toFormat) {
-                            Format.JPEG -> jpegWriter
-                            Format.PNG -> pngWriter
-                            else -> throw IllegalArgumentException("Unsupported format")
-                        }
+                        val writer = getSuitableImageWriter(toFormat)
                         image.frames.first().output(writer, filePath)
                     }
                 }
@@ -124,12 +113,7 @@ class ImageConvertViewModel : ProcessViewModel() {
     }
 
     private fun writeImage(toFormat: Format, image: ImmutableImage, filePath: Path) {
-        val writer = when (toFormat) {
-            Format.WEBP -> webpWriter
-            Format.JPEG -> jpegWriter
-            Format.PNG -> pngWriter
-            Format.GIF -> gifWriter
-        }
+        val writer = getSuitableImageWriter(toFormat)
         image.output(writer, filePath)
     }
 }

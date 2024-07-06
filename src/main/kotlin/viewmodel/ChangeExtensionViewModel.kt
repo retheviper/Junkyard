@@ -36,7 +36,7 @@ class ChangeExtensionViewModel : ProcessViewModel() {
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                toggleProcessing()
+                startProcessing()
                 try {
                     Files.walk(basePath)
                         .filter { it.extension.equals(fromExtension.value, ignoreCase.value) }
@@ -51,7 +51,7 @@ class ChangeExtensionViewModel : ProcessViewModel() {
                             }
                         }
                 } finally {
-                    toggleProcessing()
+                    stopProcessing()
                 }
             }
         }

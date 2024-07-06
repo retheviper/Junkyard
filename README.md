@@ -12,13 +12,15 @@ Some of the tools are based on: https://github.com/retheviper/PythonTools
 - Convert RAR to ZIP
 - Change file extension
 - Convert image format
+- Create thumbnail (resize) image
 
 ## Screenshot
 
-![img.png](misc/archive.png)
-![img.png](misc/rar_to_zip.png)
-![img.png](misc/change_extension.png)
-![img.png](misc/convert_format.png)
+![archive.png](misc/archive.png)
+![rar_to_zip.png](misc/rar_to_zip.png)
+![change_extension.png](misc/change_extension.png)
+![convert_format.png](misc/convert_format.png)
+![create_thumbnail.png](misc/create_thumbnail.png)
 
 ## Used Libraries
 

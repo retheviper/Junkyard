@@ -22,10 +22,14 @@ abstract class ProcessViewModel : ViewModel() {
         _path.value = path
     }
 
-    protected fun toggleProcessing() {
-        _isProcessing.value = !_isProcessing.value
+    protected fun startProcessing() {
+        _isProcessing.value = true
         _processed.value = 0
         _failed.value = 0
+    }
+
+    protected fun stopProcessing() {
+        _isProcessing.value = false
     }
 
     protected fun incrementProcessed() {

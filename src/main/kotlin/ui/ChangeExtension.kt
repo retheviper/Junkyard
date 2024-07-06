@@ -46,7 +46,7 @@ fun ChangeExtensionView() {
         )
 
         Row {
-            ExtensionTextField(
+            LabeledTextField(
                 label = "From extension:",
                 value = fromExtension.value,
                 onValueChange = { viewModel.setFromExtension(it) }
@@ -54,7 +54,7 @@ fun ChangeExtensionView() {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            ExtensionTextField(
+            LabeledTextField(
                 label = "To extension:",
                 value = toExtension.value,
                 onValueChange = { viewModel.setToExtension(it) }
@@ -62,24 +62,5 @@ fun ChangeExtensionView() {
         }
 
         ProcessesSection(viewModel)
-    }
-}
-
-@Composable
-fun ExtensionTextField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit
-) {
-    Column {
-        Text(label)
-        TextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = TextStyle(fontSize = 16.sp),
-            shape = RectangleShape,
-            modifier = Modifier.size(250.dp, 50.dp)
-        )
     }
 }
