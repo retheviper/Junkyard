@@ -37,9 +37,9 @@ import java.awt.Dimension
 import org.koin.core.context.GlobalContext.startKoin
 import ui.ArchiveView
 import ui.ChangeExtensionView
+import ui.CreateThumbnailView
 import ui.ImageConvertView
 import ui.RarToZipView
-import ui.CreateThumbnailView
 
 enum class Screen(val title: String, val icon: String) {
     Archive("Archive", "📦"),

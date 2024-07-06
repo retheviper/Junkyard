@@ -5,14 +5,10 @@ import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.format.Format
 import com.sksamuel.scrimage.format.FormatDetector
 import com.sksamuel.scrimage.nio.AnimatedGifReader
-import com.sksamuel.scrimage.nio.GifWriter
 import com.sksamuel.scrimage.nio.ImageIOReader
 import com.sksamuel.scrimage.nio.ImageSource
-import com.sksamuel.scrimage.nio.JpegWriter
-import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.webp.Gif2WebpWriter
 import com.sksamuel.scrimage.webp.WebpImageReader
-import com.sksamuel.scrimage.webp.WebpWriter
 import framework.getSuitableImageWriter
 import framework.toExtension
 import java.nio.file.Files

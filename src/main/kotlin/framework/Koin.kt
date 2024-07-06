@@ -11,9 +11,9 @@ import com.sksamuel.scrimage.webp.WebpWriter
 import org.koin.dsl.module
 import viewmodel.ArchiveViewModel
 import viewmodel.ChangeExtensionViewModel
+import viewmodel.CreateThumbnailViewModel
 import viewmodel.ImageConvertViewModel
 import viewmodel.RarToZipViewModel
-import viewmodel.CreateThumbnailViewModel
 
 private val viewModelModules = module {
     single { ArchiveViewModel() }
