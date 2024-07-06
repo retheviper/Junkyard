@@ -155,7 +155,15 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
         }
     }
 
-    private fun getWriter(format: Format): ImageWriter {
+    private fun toThumbnail(image: ImmutableImage): ImmutableImage {
+        return when (option.value) {
+            CreateThumbnailOption.FIXED_SIZE -> image.scaleTo(width.value, height.value)
+            CreateThumbnailOption.ASPECT_RATIO -> image.scaleToWidth(width.value)
+            CreateThumbnailOption.RATIO -> image.scaleToWidth((image.width * ratio.value / 100).toInt())
+        }
+    }
+
+    private fun getWriter(): ImageWriter {
         return getSuitableImageWriter(
             when (imageOutputFormat.value) {
                 ImageOutputFormat.JPEG -> Format.JPEG
@@ -166,17 +174,9 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
         )
     }
 
-    private fun toThumbnail(image: ImmutableImage): ImmutableImage {
-        return when (option.value) {
-            CreateThumbnailOption.FIXED_SIZE -> image.scaleTo(width.value, height.value)
-            CreateThumbnailOption.ASPECT_RATIO -> image.scaleToWidth(width.value)
-            CreateThumbnailOption.RATIO -> image.scaleToWidth((image.width * ratio.value / 100).toInt())
-        }
-    }
-
     private fun writeThumbnail(thumbnailPath: Path, image: ImmutableImage, format: Format) {
-        val writer = getWriter(format)
-        val outputExtension = when(imageOutputFormat.value) {
+        val writer = getWriter()
+        val outputExtension = when (imageOutputFormat.value) {
             ImageOutputFormat.ORIGINAL -> format.toExtension().first()
             ImageOutputFormat.PNG -> "png"
             ImageOutputFormat.JPEG -> "jpg"
