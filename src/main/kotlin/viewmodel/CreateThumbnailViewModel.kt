@@ -141,7 +141,7 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
                     }
                 } else {
                     val image = toThumbnail(gif.frames.first())
-                    writeThumbnail(thumbnailPath, image, format)
+                    writeThumbnail(thumbnailPath, image)
                 }
             }
 
@@ -150,7 +150,7 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
                     Format.WEBP -> webpImageReader.read(data)
                     else -> imageIOReader.read(data)
                 }
-                writeThumbnail(thumbnailPath, toThumbnail(image), format)
+                writeThumbnail(thumbnailPath, toThumbnail(image))
             }
         }
     }
@@ -174,10 +174,10 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
         )
     }
 
-    private fun writeThumbnail(thumbnailPath: Path, image: ImmutableImage, format: Format) {
+    private fun writeThumbnail(thumbnailPath: Path, image: ImmutableImage) {
         val writer = getWriter()
         val outputExtension = when (imageOutputFormat.value) {
-            ImageOutputFormat.ORIGINAL -> format.toExtension().first()
+            ImageOutputFormat.ORIGINAL -> thumbnailPath.extension
             ImageOutputFormat.PNG -> "png"
             ImageOutputFormat.JPEG -> "jpg"
             ImageOutputFormat.WEBP -> "webp"
