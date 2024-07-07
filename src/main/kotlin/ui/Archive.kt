@@ -5,13 +5,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Divider
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import framework.LocalizationManager
 import org.koin.compose.koinInject
 import viewmodel.ArchiveViewModel
 
@@ -25,17 +23,12 @@ fun ArchiveView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = "Archive subdirectories",
-            fontSize = 26.sp
-        )
-
-        Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
+        TitleTextSection(LocalizationManager.getString("title_archive_subdirectories"))
 
         CheckboxSection(
             onClick = { viewModel.toggleParentDirectory() },
             checked = isParentDirectoryIncluded.value,
-            text = "Include directory in archive"
+            text = LocalizationManager.getString("include_parent_directory")
         )
 
         Spacer(modifier = Modifier.height(16.dp))

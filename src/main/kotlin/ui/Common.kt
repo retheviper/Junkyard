@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import framework.LocalizationManager
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import viewmodel.ProcessViewModel
 
@@ -43,7 +45,7 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
     val processed = viewModel.processed.collectAsState()
     val failed = viewModel.failed.collectAsState()
     val launcher = rememberDirectoryPickerLauncher(
-        title = "Select a directory",
+        title = LocalizationManager.getString("select_directory"),
         initialDirectory = null,
         platformSettings = null
     ) { directory ->
@@ -56,11 +58,11 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             .padding(16.dp)
     ) {
         Text(
-            text = "Success: ${processed.value}",
+            text = "${LocalizationManager.getString("success")}: ${processed.value}",
             fontSize = 16.sp
         )
         Text(
-            text = "Failed: ${failed.value}",
+            text = "${LocalizationManager.getString("failed")}: ${failed.value}",
             fontSize = 16.sp
         )
 
@@ -71,12 +73,12 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             modifier = Modifier.padding(8.dp)
         ) {
             Column {
-                Text("Selected path: ${path.value ?: "None"}")
+                Text("${LocalizationManager.getString("selected_path")}: ${path.value ?: LocalizationManager.getString("none")}")
                 Row {
                     Button(
                         onClick = { launcher.launch() }
                     ) {
-                        Text("Select directory")
+                        Text(LocalizationManager.getString("select_directory"))
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -85,7 +87,7 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                         enabled = path.value != null && !isProcessing.value,
                         onClick = viewModel::onProcessClick
                     ) {
-                        Text("Process")
+                        Text(LocalizationManager.getString("process"))
                     }
                 }
             }
@@ -126,7 +128,8 @@ fun <T : Enum<T>> DropdownMenuBox(
                 modifier = Modifier.padding(start = 10.dp)
             )
             Icon(
-                Icons.Filled.ArrowDropDown, "contentDescription",
+                Icons.Filled.ArrowDropDown,
+                "contentDescription",
                 Modifier.align(Alignment.CenterEnd)
             )
             DropdownMenu(
@@ -189,4 +192,14 @@ fun LabeledTextField(
             modifier = Modifier.size(250.dp, 50.dp)
         )
     }
+}
+
+@Composable
+fun TitleTextSection(text: String) {
+    Text(
+        text,
+        fontSize = 26.sp
+    )
+
+    Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
 }

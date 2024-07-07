@@ -6,13 +6,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Divider
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import framework.LocalizationManager
 import org.koin.compose.koinInject
 import viewmodel.ChangeExtensionViewModel
 
@@ -28,22 +26,17 @@ fun ChangeExtensionView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = "Change file extension",
-            fontSize = 26.sp
-        )
-
-        Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
+        TitleTextSection(LocalizationManager.getString("title_change_file_extension"))
 
         CheckboxSection(
             onClick = { viewModel.toggleIgnoreCase() },
             checked = ignoreCase.value,
-            text = "Ignore case"
+            text = LocalizationManager.getString("ignore_case")
         )
 
         Row {
             LabeledTextField(
-                label = "From extension:",
+                label = "${LocalizationManager.getString("from_extension")}:",
                 value = fromExtension.value,
                 onValueChange = { viewModel.setFromExtension(it) }
             )
@@ -51,7 +44,7 @@ fun ChangeExtensionView() {
             Spacer(modifier = Modifier.width(16.dp))
 
             LabeledTextField(
-                label = "To extension:",
+                label = "${LocalizationManager.getString("to_extension")}:",
                 value = toExtension.value,
                 onValueChange = { viewModel.setToExtension(it) }
             )

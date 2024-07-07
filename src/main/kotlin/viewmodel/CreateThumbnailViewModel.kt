@@ -20,10 +20,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-enum class CreateThumbnailOption(val description: String) {
-    FIXED_SIZE("Set fixed size"),
-    ASPECT_RATIO("Set aspect ratio"),
-    RATIO("Set ratio")
+enum class CreateThumbnailOption {
+    FIXED_SIZE, ASPECT_RATIO, RATIO
 }
 
 enum class ImageOutputFormat {

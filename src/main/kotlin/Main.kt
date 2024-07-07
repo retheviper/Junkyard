@@ -23,14 +23,19 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import framework.LocalizationManager
+import framework.LocalizationManager.locale
 import framework.MyTheme
 import framework.appModules
 import java.awt.Dimension
+import java.util.Locale
 import org.koin.core.context.GlobalContext.startKoin
 import ui.ArchiveView
 import ui.ChangeExtensionView
@@ -106,6 +111,7 @@ fun main() = application {
     startKoin {
         modules(appModules)
     }
+
     Window(
         onCloseRequest = ::exitApplication,
         title = "🛠️Junkyard",
@@ -116,6 +122,46 @@ fun main() = application {
         }
     ) {
         window.minimumSize = Dimension(800, 700)
+
+        SettingsMenuBar()
+
         MainScreen()
+    }
+}
+
+@Composable
+private fun FrameWindowScope.SettingsMenuBar() {
+    var locale by remember { mutableStateOf(Locale.getDefault()) }
+    if (!LocalizationManager.supportedLocales.contains(locale)) {
+        locale = Locale.ENGLISH
+    }
+    LocalizationManager.setLocale(locale)
+
+    MenuBar {
+        Menu(LocalizationManager.getString("settings")) {
+            Menu(LocalizationManager.getString("language")) {
+                CheckboxItem(
+                    "English",
+                    checked = locale == Locale.ENGLISH,
+                    onCheckedChange = {
+                        locale = Locale.ENGLISH
+                    }
+                )
+                CheckboxItem(
+                    "日本語",
+                    checked = locale == Locale.JAPAN,
+                    onCheckedChange = {
+                        locale = Locale.JAPAN
+                    }
+                )
+                CheckboxItem(
+                    "한국어",
+                    checked = locale == Locale.KOREA,
+                    onCheckedChange = {
+                        locale = Locale.KOREA
+                    }
+                )
+            }
+        }
     }
 }
