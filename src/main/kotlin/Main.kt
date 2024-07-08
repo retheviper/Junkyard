@@ -29,9 +29,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import framework.LocalizationManager
-import framework.LocalizationManager.locale
 import framework.MyTheme
 import framework.appModules
 import java.awt.Dimension
@@ -56,6 +56,7 @@ fun MainScreen() {
     val navController = rememberNavController()
     val isSystemInDarkTheme = isSystemInDarkTheme()
     var darkMode by remember { mutableStateOf(isSystemInDarkTheme) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
 
     MyTheme(
         darkTheme = darkMode,
@@ -68,7 +69,7 @@ fun MainScreen() {
                             label = { Text(it.title) },
                             icon = { Text(it.icon) },
                             onClick = { navController.navigate(it.name) },
-                            selected = navController.currentDestination?.route == it.name
+                            selected = navBackStackEntry?.destination?.route == it.name
                         )
                     }
 
