@@ -13,9 +13,10 @@ Some of the tools are based on: https://github.com/retheviper/PythonTools
 - Change file extension
 - Convert image format
 - Create thumbnail (resize) image
+- Dark mode
+- Multiple language support (English, Japanese, Korean)
 
 ## Screenshot
-
 ![archive.png](misc/archive.png)
 ![rar_to_zip.png](misc/rar_to_zip.png)
 ![change_extension.png](misc/change_extension.png)
