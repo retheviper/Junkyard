@@ -113,6 +113,8 @@ fun MainScreen() {
 }
 
 fun main() = application {
+    settingUpApplication()
+
     Window(
         onCloseRequest = ::exitApplication,
         title = "🛠️Junkyard",
@@ -123,8 +125,6 @@ fun main() = application {
         }
     ) {
         window.minimumSize = Dimension(800, 700)
-
-        settingUpApplication()
 
         SettingsMenuBar()
 
