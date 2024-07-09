@@ -33,9 +33,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import framework.LocalizationState
 import framework.MyTheme
+import framework.OS
 import framework.appModules
+import framework.getOS
 import framework.rememberLocalizationState
 import java.awt.Dimension
+import java.awt.SystemColor.window
 import java.util.Locale
 import org.koin.compose.koinInject
 import org.koin.core.context.GlobalContext.startKoin
@@ -116,23 +119,28 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "🛠️Junkyard",
         onKeyEvent = { keyEvent ->
-            (keyEvent.isMetaPressed && keyEvent.key == Key.W).also {
+            (getOS() == OS.MAC && keyEvent.isMetaPressed && keyEvent.key == Key.W).also {
                 if (it) exitApplication()
             }
         }
     ) {
         window.minimumSize = Dimension(800, 700)
 
-        val localizationState = rememberLocalizationState()
-
-        startKoin {
-            modules(module { single { localizationState } })
-            modules(appModules)
-        }
+        settingUpApplication()
 
         SettingsMenuBar()
 
         MainScreen()
+    }
+}
+
+@Composable
+private fun settingUpApplication() {
+    val localizationState = rememberLocalizationState()
+
+    startKoin {
+        modules(module { single { localizationState } })
+        modules(appModules)
     }
 }
 
