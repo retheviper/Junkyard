@@ -7,18 +7,14 @@ enum class OS {
     OTHER;
 
     companion object {
+        private val os = System.getProperty("os.name").lowercase()
+
         val current: OS
-            get() = getOS()
-    }
-}
-
-fun getOS(): OS {
-    val os = System.getProperty("os.name").lowercase()
-
-    return when {
-        os.contains("win") -> OS.WINDOWS
-        os.contains("mac") -> OS.MAC
-        os.contains("nix") || os.contains("nux") || os.contains("aix") -> OS.LINUX
-        else -> OS.OTHER
+            get() = when {
+                os.contains("win") -> WINDOWS
+                os.contains("mac") -> MAC
+                os.contains("nix") || os.contains("nux") || os.contains("aix") -> LINUX
+                else -> OTHER
+            }
     }
 }
