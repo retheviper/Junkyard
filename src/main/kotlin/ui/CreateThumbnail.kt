@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sksamuel.scrimage.format.Format
-import framework.LocalizationManager
+import framework.LocalizationState
 import org.koin.compose.koinInject
 import viewmodel.CreateThumbnailOption
 import viewmodel.CreateThumbnailViewModel
@@ -28,6 +28,7 @@ import viewmodel.ImageOutputFormat
 
 @Composable
 fun CreateThumbnailView() {
+    val localizationState: LocalizationState = koinInject()
     val viewModel: CreateThumbnailViewModel = koinInject()
     val targetFormats = viewModel.targetFormats.collectAsState()
     val outputFormat = viewModel.imageOutputFormat.collectAsState()
@@ -39,9 +40,9 @@ fun CreateThumbnailView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(LocalizationManager.getString("title_create_thumbnail"))
+        TitleTextSection(localizationState.getString("title_create_thumbnail"))
 
-        Text("${LocalizationManager.getString("target_format")}:")
+        Text("${localizationState.getString("target_format")}:")
 
         Row {
             Format.entries.forEach { format ->
@@ -60,7 +61,7 @@ fun CreateThumbnailView() {
         }
 
         DropdownMenuBox(
-            label = "${LocalizationManager.getString("output_format")}:",
+            label = "${localizationState.getString("output_format")}:",
             selectedItem = outputFormat.value,
             items = ImageOutputFormat.entries,
             onItemSelected = { viewModel.setImageOutputFormat(it) },
@@ -70,7 +71,7 @@ fun CreateThumbnailView() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("${LocalizationManager.getString("resize_options")}:")
+        Text("${localizationState.getString("resize_options")}:")
 
         Row {
             CreateThumbnailOption.entries.forEach { option ->
@@ -82,7 +83,7 @@ fun CreateThumbnailView() {
                         onClick = { viewModel.setOption(option) }
                     )
                     Text(
-                        text = LocalizationManager.getString(option.name.lowercase()),
+                        text = localizationState.getString(option.name.lowercase()),
                         modifier = Modifier.align(Alignment.CenterVertically)
                     )
                 }
@@ -97,7 +98,7 @@ fun CreateThumbnailView() {
                     Spacer(modifier = Modifier.width(16.dp))
 
                     LabeledTextField(
-                        label = "${LocalizationManager.getString("height")}:",
+                        label = "${localizationState.getString("height")}:",
                         value = viewModel.height.collectAsState().value.toString(),
                         onValueChange = {
                             it.toIntOrNull()?.let { height ->
@@ -129,8 +130,10 @@ fun CreateThumbnailView() {
 
 @Composable
 private fun WidthInput(viewModel: CreateThumbnailViewModel) {
+    val localizationState: LocalizationState = koinInject()
+
     LabeledTextField(
-        label = "${LocalizationManager.getString("width")}:",
+        label = "${localizationState.getString("width")}:",
         value = viewModel.width.collectAsState().value.toString(),
         onValueChange = {
             it.toIntOrNull()?.let { width ->
@@ -142,8 +145,10 @@ private fun WidthInput(viewModel: CreateThumbnailViewModel) {
 
 @Composable
 private fun RatioInput(viewModel: CreateThumbnailViewModel) {
+    val localizationState: LocalizationState = koinInject()
+
     LabeledTextField(
-        label = "${LocalizationManager.getString("ratio")}:",
+        label = "${localizationState.getString("ratio")}:",
         value = viewModel.ratio.collectAsState().value.toString(),
         onValueChange = {
             it.toDoubleOrNull()?.let { ratio ->

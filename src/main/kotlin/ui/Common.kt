@@ -34,18 +34,20 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import framework.LocalizationManager
+import framework.LocalizationState
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
+import org.koin.compose.koinInject
 import viewmodel.ProcessViewModel
 
 @Composable
 fun ProcessesSection(viewModel: ProcessViewModel) {
+    val localizationState: LocalizationState = koinInject()
     val path = viewModel.path.collectAsState()
     val isProcessing = viewModel.isProcessing.collectAsState()
     val processed = viewModel.processed.collectAsState()
     val failed = viewModel.failed.collectAsState()
     val launcher = rememberDirectoryPickerLauncher(
-        title = LocalizationManager.getString("select_directory"),
+        title = localizationState.getString("select_directory"),
         initialDirectory = null,
         platformSettings = null
     ) { directory ->
@@ -58,11 +60,11 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             .padding(16.dp)
     ) {
         Text(
-            text = "${LocalizationManager.getString("success")}: ${processed.value}",
+            text = "${localizationState.getString("success")}: ${processed.value}",
             fontSize = 16.sp
         )
         Text(
-            text = "${LocalizationManager.getString("failed")}: ${failed.value}",
+            text = "${localizationState.getString("failed")}: ${failed.value}",
             fontSize = 16.sp
         )
 
@@ -73,12 +75,12 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             modifier = Modifier.padding(8.dp)
         ) {
             Column {
-                Text("${LocalizationManager.getString("selected_path")}: ${path.value ?: LocalizationManager.getString("none")}")
+                Text("${localizationState.getString("selected_path")}: ${path.value ?: localizationState.getString("none")}")
                 Row {
                     Button(
                         onClick = { launcher.launch() }
                     ) {
-                        Text(LocalizationManager.getString("select_directory"))
+                        Text(localizationState.getString("select_directory"))
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -87,7 +89,7 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                         enabled = path.value != null && !isProcessing.value,
                         onClick = viewModel::onProcessClick
                     ) {
-                        Text(LocalizationManager.getString("process"))
+                        Text(localizationState.getString("process"))
                     }
                 }
             }

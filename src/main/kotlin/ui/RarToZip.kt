@@ -6,12 +6,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import framework.LocalizationManager
+import framework.LocalizationState
 import org.koin.compose.koinInject
 import viewmodel.RarToZipViewModel
 
 @Composable
 fun RarToZipView() {
+    val localizationState: LocalizationState = koinInject()
     val viewModel: RarToZipViewModel = koinInject()
 
     Column(
@@ -19,7 +20,7 @@ fun RarToZipView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(LocalizationManager.getString("title_rar_to_zip"))
+        TitleTextSection(localizationState.getString("title_rar_to_zip"))
 
         ProcessesSection(viewModel)
     }

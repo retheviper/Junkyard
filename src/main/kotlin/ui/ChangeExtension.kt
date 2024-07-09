@@ -10,12 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import framework.LocalizationManager
+import framework.LocalizationState
 import org.koin.compose.koinInject
 import viewmodel.ChangeExtensionViewModel
 
 @Composable
 fun ChangeExtensionView() {
+    val localizationState: LocalizationState = koinInject()
     val viewModel: ChangeExtensionViewModel = koinInject()
     val ignoreCase = viewModel.ignoreCase.collectAsState()
     val fromExtension = viewModel.fromExtension.collectAsState()
@@ -26,17 +27,17 @@ fun ChangeExtensionView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(LocalizationManager.getString("title_change_file_extension"))
+        TitleTextSection(localizationState.getString("title_change_file_extension"))
 
         CheckboxSection(
             onClick = { viewModel.toggleIgnoreCase() },
             checked = ignoreCase.value,
-            text = LocalizationManager.getString("ignore_case")
+            text = localizationState.getString("ignore_case")
         )
 
         Row {
             LabeledTextField(
-                label = "${LocalizationManager.getString("from_extension")}:",
+                label = "${localizationState.getString("from_extension")}:",
                 value = fromExtension.value,
                 onValueChange = { viewModel.setFromExtension(it) }
             )
@@ -44,7 +45,7 @@ fun ChangeExtensionView() {
             Spacer(modifier = Modifier.width(16.dp))
 
             LabeledTextField(
-                label = "${LocalizationManager.getString("to_extension")}:",
+                label = "${localizationState.getString("to_extension")}:",
                 value = toExtension.value,
                 onValueChange = { viewModel.setToExtension(it) }
             )

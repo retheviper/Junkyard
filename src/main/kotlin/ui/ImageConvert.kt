@@ -16,12 +16,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.sksamuel.scrimage.format.Format
-import framework.LocalizationManager
+import framework.LocalizationState
 import org.koin.compose.koinInject
 import viewmodel.ImageConvertViewModel
 
 @Composable
 fun ImageConvertView() {
+    val localizationState: LocalizationState = koinInject()
     val viewModel: ImageConvertViewModel = koinInject()
     val fromFormat = viewModel.fromFormat.collectAsState()
     val toFormat = viewModel.toFormat.collectAsState()
@@ -34,11 +35,11 @@ fun ImageConvertView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(LocalizationManager.getString("title_convert_image_format"))
+        TitleTextSection(localizationState.getString("title_convert_image_format"))
 
         Row {
             DropdownMenuBox(
-                label = "${LocalizationManager.getString("from_format")}t:",
+                label = "${localizationState.getString("from_format")}t:",
                 selectedItem = fromFormat.value,
                 items = Format.entries,
                 onItemSelected = {
@@ -55,7 +56,7 @@ fun ImageConvertView() {
             Spacer(modifier = Modifier.width(16.dp))
 
             DropdownMenuBox(
-                label = "${LocalizationManager.getString("to_format")}}:",
+                label = "${localizationState.getString("to_format")}}:",
                 selectedItem = toFormat.value,
                 items = selectableFormats,
                 onItemSelected = { viewModel.setToFormat(it) },

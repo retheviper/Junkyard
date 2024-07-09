@@ -31,12 +31,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import framework.LocalizationManager
+import framework.LocalizationState
 import framework.MyTheme
 import framework.appModules
+import framework.rememberLocalizationState
 import java.awt.Dimension
 import java.util.Locale
+import org.koin.compose.koinInject
 import org.koin.core.context.GlobalContext.startKoin
+import org.koin.dsl.module
 import ui.ArchiveView
 import ui.ChangeExtensionView
 import ui.CreateThumbnailView
@@ -109,10 +112,6 @@ fun MainScreen() {
 }
 
 fun main() = application {
-    startKoin {
-        modules(appModules)
-    }
-
     Window(
         onCloseRequest = ::exitApplication,
         title = "🛠️Junkyard",
@@ -124,6 +123,13 @@ fun main() = application {
     ) {
         window.minimumSize = Dimension(800, 700)
 
+        val localizationState = rememberLocalizationState()
+
+        startKoin {
+            modules(module { single { localizationState } })
+            modules(appModules)
+        }
+
         SettingsMenuBar()
 
         MainScreen()
@@ -132,34 +138,30 @@ fun main() = application {
 
 @Composable
 private fun FrameWindowScope.SettingsMenuBar() {
-    var locale by remember { mutableStateOf(Locale.getDefault()) }
-    if (!LocalizationManager.supportedLocales.contains(locale)) {
-        locale = Locale.ENGLISH
-    }
-    LocalizationManager.setLocale(locale)
+    val localizationState = koinInject<LocalizationState>()
 
     MenuBar {
-        Menu(LocalizationManager.getString("settings")) {
-            Menu(LocalizationManager.getString("language")) {
+        Menu(localizationState.getString("settings")) {
+            Menu(localizationState.getString("language")) {
                 CheckboxItem(
                     "English",
-                    checked = locale == Locale.ENGLISH,
+                    checked = localizationState.currentLocale == Locale.ENGLISH,
                     onCheckedChange = {
-                        locale = Locale.ENGLISH
+                        localizationState.setLocale(Locale.ENGLISH)
                     }
                 )
                 CheckboxItem(
                     "日本語",
-                    checked = locale == Locale.JAPAN,
+                    checked = localizationState.currentLocale == Locale.JAPAN || localizationState.currentLocale == Locale.JAPANESE,
                     onCheckedChange = {
-                        locale = Locale.JAPAN
+                        localizationState.setLocale(Locale.JAPAN)
                     }
                 )
                 CheckboxItem(
                     "한국어",
-                    checked = locale == Locale.KOREA,
+                    checked = localizationState.currentLocale == Locale.KOREA || localizationState.currentLocale == Locale.KOREAN,
                     onCheckedChange = {
-                        locale = Locale.KOREA
+                        localizationState.setLocale(Locale.KOREA)
                     }
                 )
             }
