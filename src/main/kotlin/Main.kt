@@ -119,7 +119,7 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "🛠️Junkyard",
         onKeyEvent = { keyEvent ->
-            (getOS() == OS.MAC && keyEvent.isMetaPressed && keyEvent.key == Key.W).also {
+            (OS.current == OS.MAC && keyEvent.isMetaPressed && keyEvent.key == Key.W).also {
                 if (it) exitApplication()
             }
         }

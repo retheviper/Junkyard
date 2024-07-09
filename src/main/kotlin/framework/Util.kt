@@ -4,7 +4,12 @@ enum class OS {
     WINDOWS,
     MAC,
     LINUX,
-    OTHER
+    OTHER;
+
+    companion object {
+        val current: OS
+            get() = getOS()
+    }
 }
 
 fun getOS(): OS {
