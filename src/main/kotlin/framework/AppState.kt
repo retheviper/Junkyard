@@ -8,14 +8,20 @@ import java.util.Locale
 import java.util.ResourceBundle
 
 class LocalizationState {
-    private val resourceBundle: MutableState<ResourceBundle> = mutableStateOf(ResourceBundle.getBundle("strings"))
+    private var resourceBundle: MutableState<ResourceBundle>
     private val supportedLocales = listOf(Locale.ENGLISH, Locale.JAPAN, Locale.KOREA)
+
+    init {
+        val locale = Locale.getDefault().let { defaultLocale ->
+            if (supportedLocales.contains(defaultLocale)) defaultLocale else Locale.ENGLISH
+        }
+        resourceBundle = mutableStateOf(ResourceBundle.getBundle("strings", locale))
+    }
 
     val currentLocale: Locale
         get() = resourceBundle.value.locale
 
-    fun setLocale(newLocale: Locale) {
-        val locale = if (supportedLocales.contains(newLocale)) newLocale else Locale.ENGLISH
+    fun setLocale(locale: Locale) {
         resourceBundle.value = ResourceBundle.getBundle("strings", locale)
     }
 
