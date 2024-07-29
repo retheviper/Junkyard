@@ -20,6 +20,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
+    override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
     private val webpImageReader by inject<WebpImageReader>()
     private val imageIOReader by inject<ImageIOReader>()
     private val gif2WebpWriter by inject<Gif2WebpWriter>()

@@ -46,6 +46,7 @@ import ui.ChangeExtensionView
 import ui.CreateThumbnailView
 import ui.ImageConvertView
 import ui.RarToZipView
+import ui.ResyncSubtitleView
 
 enum class Screen(val title: String, val icon: String) {
     Archive("Archive", "📦"),
@@ -53,6 +54,7 @@ enum class Screen(val title: String, val icon: String) {
     ChangeExtension("Extension", "🔄"),
     ImageConvert("Convert", "🖼️"),
     CreateThumbnail("Thumbnail", "📐"),
+    ResyncSubtitle("Resync", "📽️")
 }
 
 @Composable
@@ -106,6 +108,7 @@ fun MainScreen() {
                     composable(Screen.ChangeExtension.name) { ChangeExtensionView() }
                     composable(Screen.ImageConvert.name) { ImageConvertView() }
                     composable(Screen.CreateThumbnail.name) { CreateThumbnailView() }
+                    composable(Screen.ResyncSubtitle.name) { ResyncSubtitleView() }
                 }
             }
         }

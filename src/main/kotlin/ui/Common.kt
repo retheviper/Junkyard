@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CircularProgressIndicator
@@ -20,10 +21,14 @@ import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
@@ -32,12 +37,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import framework.LocalizationState
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerType
 import org.koin.compose.koinInject
 import viewmodel.ProcessViewModel
+import viewmodel.TargetPickerType
 
 @Composable
 fun ProcessesSection(viewModel: ProcessViewModel) {
@@ -46,12 +55,23 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
     val isProcessing = viewModel.isProcessing.collectAsState()
     val processed = viewModel.processed.collectAsState()
     val failed = viewModel.failed.collectAsState()
-    val launcher = rememberDirectoryPickerLauncher(
-        title = localizationState.getString("select_directory"),
-        initialDirectory = null,
-        platformSettings = null
-    ) { directory ->
-        directory?.let { viewModel.setPath(it.file.toPath()) }
+    val launcher = when (viewModel.targetPickerType) {
+        TargetPickerType.DIRECTORY -> rememberDirectoryPickerLauncher(
+            title = localizationState.getString("select_directory"),
+            initialDirectory = null,
+            platformSettings = null
+        ) { directory ->
+            directory?.let { viewModel.setPath(it.file.toPath()) }
+        }
+
+        TargetPickerType.FILE -> rememberFilePickerLauncher(
+            title = localizationState.getString("select_file"),
+            type = PickerType.File(extensions = viewModel.targetExtensions),
+            initialDirectory = null,
+            platformSettings = null
+        ) { file ->
+            file?.let { viewModel.setPath(it.file.toPath()) }
+        }
     }
 
     Column(
@@ -80,7 +100,12 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                     Button(
                         onClick = { launcher.launch() }
                     ) {
-                        Text(localizationState.getString("select_directory"))
+                        Text(
+                            when (viewModel.targetPickerType) {
+                                TargetPickerType.DIRECTORY -> localizationState.getString("select_directory")
+                                TargetPickerType.FILE -> localizationState.getString("select_file")
+                            }
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -204,4 +229,29 @@ fun TitleTextSection(text: String) {
     )
 
     Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
+}
+
+@Composable
+fun NumberInputField(
+    number: Int,
+    onNumberChange: (String) -> Unit,
+    onIncrease: () -> Unit,
+    onDecrease: () -> Unit
+) {
+    OutlinedTextField(
+        value = number.toString(),
+        onValueChange = onNumberChange,
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        trailingIcon = {
+            Column {
+                IconButton(onClick = onIncrease, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Increase")
+                }
+                IconButton(onClick = onDecrease, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Decrease")
+                }
+            }
+        }
+    )
 }

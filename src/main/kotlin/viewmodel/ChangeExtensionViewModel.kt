@@ -6,6 +6,8 @@ import kotlin.io.path.nameWithoutExtension
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class ChangeExtensionViewModel : ProcessViewModel() {
+    override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
+
     private val _ignoreCase = MutableStateFlow(false)
     val ignoreCase: MutableStateFlow<Boolean> = _ignoreCase
 

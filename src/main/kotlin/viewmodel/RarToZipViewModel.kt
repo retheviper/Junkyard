@@ -8,6 +8,8 @@ import java.util.zip.ZipOutputStream
 import kotlin.io.path.nameWithoutExtension
 
 class RarToZipViewModel : ProcessViewModel() {
+    override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
+
     override fun onProcessClick() {
         process { basePath ->
             Files.walk(basePath, 1)

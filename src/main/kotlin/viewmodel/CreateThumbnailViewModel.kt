@@ -29,6 +29,7 @@ enum class ImageOutputFormat {
 }
 
 class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
+    override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
     private val webpImageReader by inject<WebpImageReader>()
     private val imageIOReader by inject<ImageIOReader>()
     private val streamingGifWriter by inject<StreamingGifWriter>()

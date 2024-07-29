@@ -8,8 +8,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
 
-abstract class ProcessViewModel : ViewModel() {
+enum class TargetPickerType {
+    DIRECTORY,
+    FILE
+}
+
+abstract class ProcessViewModel : ViewModel(), KoinComponent {
+    abstract val targetPickerType: TargetPickerType
+    open val targetExtensions: List<String> = emptyList()
+
     private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
     val path: StateFlow<Path?> = _path
 

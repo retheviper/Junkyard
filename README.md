@@ -13,6 +13,7 @@ Some of the tools are based on: https://github.com/retheviper/PythonTools
 - Change file extension
 - Convert image format
 - Create thumbnail (resize) image
+- Resync subtitle
 - Dark mode
 - Multiple language support (English, Japanese, Korean)
 
@@ -22,6 +23,7 @@ Some of the tools are based on: https://github.com/retheviper/PythonTools
 ![change_extension.png](misc/change_extension.png)
 ![convert_format.png](misc/convert_format.png)
 ![create_thumbnail.png](misc/create_thumbnail.png)
+![resync_subtitle.png](misc/resync_subtitle.png)
 
 ## Used Libraries
 

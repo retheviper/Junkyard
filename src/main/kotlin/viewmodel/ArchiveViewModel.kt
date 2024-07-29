@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class ArchiveViewModel : ProcessViewModel() {
+    override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
+
     private val _isParentDirectoryIncluded = MutableStateFlow(false)
     val isParentDirectoryIncluded: StateFlow<Boolean> = _isParentDirectoryIncluded
 
