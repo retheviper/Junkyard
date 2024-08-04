@@ -30,7 +30,9 @@ class ResyncSubtitleViewModel : ProcessViewModel() {
         process { basePath ->
             val type = ResyncSubtitleType.fromString(basePath.extension)
             val strategy = strategyFactory.getStrategy(type)
-            strategy.shiftSubtitle(basePath, shiftMillis.value)
+            processWithCount {
+                strategy.shiftSubtitle(basePath, shiftMillis.value)
+            }
         }
     }
 }

@@ -4,7 +4,7 @@
 
 This is a collection of some junk tools and codes with GUI. Just for fun and learning purpose.
 
-Some of the tools are based on: https://github.com/retheviper/PythonTools
+Some tools are based on: https://github.com/retheviper/PythonTools
 
 ## Features
 
@@ -18,12 +18,18 @@ Some of the tools are based on: https://github.com/retheviper/PythonTools
 - Multiple language support (English, Japanese, Korean)
 
 ## Screenshot
+
+<details>
+<summary>Click to expand screenshots</summary>
+
 ![archive.png](misc/archive.png)
 ![rar_to_zip.png](misc/rar_to_zip.png)
 ![change_extension.png](misc/change_extension.png)
 ![convert_format.png](misc/convert_format.png)
 ![create_thumbnail.png](misc/create_thumbnail.png)
 ![resync_subtitle.png](misc/resync_subtitle.png)
+
+</details>
 
 ## Used Libraries
 
@@ -36,12 +42,3 @@ Some of the tools are based on: https://github.com/retheviper/PythonTools
 
 ```bash
 ./gradlew run
-```
-
-## to Build
-
-```bash
-./gradlew package
-```
-
-and the runnable binary will be in `build/compose/binaries/main/app` directory.
