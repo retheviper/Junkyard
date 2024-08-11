@@ -17,6 +17,12 @@ Some tools are based on: https://github.com/retheviper/PythonTools
 - Dark mode
 - Multiple language support (English, Japanese, Korean)
 
+## Target Platform
+
+- Windows
+- Linux (has text encoding issue)
+- macOS
+
 ## Screenshot
 
 <details>
@@ -40,5 +46,44 @@ Some tools are based on: https://github.com/retheviper/PythonTools
 
 ## to Run
 
+### macOS, Linux
+
 ```bash
 ./gradlew run
+```
+
+### Windows
+
+```bash
+gradlew.bat run
+```
+
+## to Build
+
+### just runnable
+
+#### macOS, Linux
+
+```bash
+./gradlew createDistributable
+```
+
+#### Windows
+
+```bash
+gradlew.bat createDistributable
+```
+
+### with installer
+
+#### macOS, Linux
+
+```bash
+./gradlew package
+```
+
+#### Windows
+
+```bash
+gradlew.bat package
+```
