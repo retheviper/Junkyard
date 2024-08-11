@@ -1,11 +1,11 @@
 package viewmodel
 
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.nio.file.Path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -32,6 +32,11 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing = _isProcessing.asStateFlow()
 
+    private val _total = MutableStateFlow(0F)
+    private val _current = MutableStateFlow(0F)
+    private val _progress = MutableStateFlow(0F)
+    val progress = _progress.asStateFlow()
+
     fun setPath(path: Path) {
         _path.value = path
     }
@@ -44,6 +49,7 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
 
     private fun stopProcessing() {
         _isProcessing.value = false
+        _current.value = 0F
     }
 
     protected fun incrementProcessed() {
@@ -54,12 +60,21 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
         _failed.value++
     }
 
+    protected fun setTotal(total: Int) {
+        _total.value = total.toFloat()
+    }
+
+    protected fun incrementCurrent() {
+        _current.value++
+        _progress.value = if (_total.value == 0F) 0F else _current.value / _total.value
+    }
+
     abstract fun onProcessClick()
 
     protected fun processWithCount(block: () -> Unit) {
-        runCatching { block() }
+        runCatching { block(); incrementCurrent() }
             .onSuccess { incrementProcessed() }
-            .onFailure { incrementFailed() }
+            .onFailure { incrementFailed(); it.printStackTrace() }
     }
 
     protected fun process(block: (Path) -> Unit) {

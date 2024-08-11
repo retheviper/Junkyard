@@ -5,11 +5,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,14 +20,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Snackbar
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -49,6 +52,7 @@ import framework.LocalizationState
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerType
+import java.awt.SystemColor.text
 import org.koin.compose.koinInject
 import viewmodel.ProcessViewModel
 import viewmodel.TargetPickerType
@@ -60,6 +64,7 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
     val isProcessing = viewModel.isProcessing.collectAsState()
     val processed = viewModel.processed.collectAsState()
     val failed = viewModel.failed.collectAsState()
+    val progress = viewModel.progress.collectAsState()
     val launcher = when (viewModel.targetPickerType) {
         TargetPickerType.DIRECTORY -> rememberDirectoryPickerLauncher(
             title = localizationState.getString("select_directory"),
@@ -84,24 +89,28 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(
-            text = "${localizationState.getString("success")}: ${processed.value}",
-            fontSize = 16.sp
-        )
-        Text(
-            text = "${localizationState.getString("failed")}: ${failed.value}",
-            fontSize = 16.sp
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.weight(1f))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(8.dp)
         ) {
-            Column {
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "${localizationState.getString("success")}: ${processed.value}",
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = "${localizationState.getString("failed")}: ${failed.value}",
+                    fontSize = 16.sp
+                )
                 Text("${localizationState.getString("selected_path")}: ${path.value ?: localizationState.getString("none")}")
-                Row {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
                     Button(
                         onClick = { launcher.launch() }
                     ) {
@@ -122,14 +131,52 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                         Text(localizationState.getString("process"))
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (isProcessing.value) {
+                    Column {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        LinearProgressIndicator(
+                            progress = progress.value,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
+                    Column {
+                        if (progress.value == 1F) {
+                            Snackbar(
+                                backgroundColor = MaterialTheme.colors.secondary,
+                                contentColor = MaterialTheme.colors.onSecondary
+                            ) {
+                                Text("finished!")
+                            }
+                        } else {
+                            LinearProgressIndicator(
+                                progress = 0F,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            LinearProgressIndicator(
+                                progress = progress.value,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
             }
+
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
 
-        if (isProcessing.value) {
-            CircularProgressIndicator()
-        }
+
     }
 }
 

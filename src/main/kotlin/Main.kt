@@ -127,7 +127,7 @@ fun main() = application {
             }
         }
     ) {
-        window.minimumSize = Dimension(800, 700)
+        window.minimumSize = Dimension(800, 780)
 
         SettingsMenuBar()
 

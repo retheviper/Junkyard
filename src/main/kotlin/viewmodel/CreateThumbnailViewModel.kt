@@ -83,36 +83,39 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
 
     override fun onProcessClick() {
         process { basePath ->
-            Files.list(basePath)
+            val targets = Files.list(basePath)
                 .filter { file ->
                     targetFormats.value.any {
                         it.toExtension().any { extension ->
                             file.extension.equals(extension, true)
                         }
                     }
+                }.toList()
+
+            setTotal(targets.size)
+
+            targets.forEach { file ->
+                val data = Files.readAllBytes(file)
+                val format = FormatDetector.detect(data).getOrNull()
+
+                if (!targetFormats.value.contains(format)) {
+                    return@forEach
                 }
-                .forEach { file ->
-                    val data = Files.readAllBytes(file)
-                    val format = FormatDetector.detect(data).getOrNull()
 
-                    if (!targetFormats.value.contains(format)) {
-                        return@forEach
-                    }
-
-                    val outputExtension = when (imageOutputFormat.value) {
-                        ImageOutputFormat.ORIGINAL -> file.extension
-                        ImageOutputFormat.PNG -> "png"
-                        ImageOutputFormat.JPEG -> "jpg"
-                        ImageOutputFormat.WEBP -> "webp"
-                    }
-
-                    val thumbnailPath =
-                        file.resolveSibling("${file.nameWithoutExtension}_thumbnail.${outputExtension}")
-
-                    processWithCount {
-                        createThumbnail(thumbnailPath, data, requireNotNull(format))
-                    }
+                val outputExtension = when (imageOutputFormat.value) {
+                    ImageOutputFormat.ORIGINAL -> file.extension
+                    ImageOutputFormat.PNG -> "png"
+                    ImageOutputFormat.JPEG -> "jpg"
+                    ImageOutputFormat.WEBP -> "webp"
                 }
+
+                val thumbnailPath =
+                    file.resolveSibling("${file.nameWithoutExtension}_thumbnail.${outputExtension}")
+
+                processWithCount {
+                    createThumbnail(thumbnailPath, data, requireNotNull(format))
+                }
+            }
         }
     }
 

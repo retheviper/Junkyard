@@ -35,8 +35,6 @@ fun ArchiveView() {
             text = localizationState.getString("include_parent_directory")
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
         ProcessesSection(viewModel)
     }
 }

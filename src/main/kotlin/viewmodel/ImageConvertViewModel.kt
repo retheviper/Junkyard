@@ -18,7 +18,6 @@ import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import kotlin.jvm.optionals.getOrElse
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -56,25 +55,29 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
 
     override fun onProcessClick() {
         process { basePath ->
-            Files.walk(basePath)
+            val targets = Files.walk(basePath)
                 .filter { file ->
                     fromFormat.value.toExtension().any {
                         file.extension.equals(it, true)
                     } || (includeArchiveFiles.value && file.isArchiveFile)
                 }
-                .forEach { file ->
-                    processWithCount {
-                        if (includeArchiveFiles.value && file.isArchiveFile) {
-                            val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
-                            runCatching { handleArchiveFile(file, tempPath) }
-                                .exceptionOrNull()
-                                .also { tempPath.toFile().deleteRecursively() }
-                        } else {
-                            handleImageFile(file)
-                            Files.deleteIfExists(file)
-                        }
+                .toList()
+
+            setTotal(targets.size)
+
+            targets.forEach { file ->
+                processWithCount {
+                    if (includeArchiveFiles.value && file.isArchiveFile) {
+                        val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
+                        runCatching { handleArchiveFile(file, tempPath) }
+                            .exceptionOrNull()
+                            .also { tempPath.toFile().deleteRecursively() }
+                    } else {
+                        handleImageFile(file)
+                        Files.deleteIfExists(file)
                     }
                 }
+            }
         }
     }
 
