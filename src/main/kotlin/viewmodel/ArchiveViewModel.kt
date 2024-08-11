@@ -41,22 +41,18 @@ class ArchiveViewModel : ProcessViewModel() {
     private fun zipDirectory(subDir: Path?, basePath: Path, zipOutputStream: ZipOutputStream) {
         Files.walk(subDir)
             .filter { Files.isRegularFile(it) }
-            .forEach { file ->
-                val zipEntry = basePath.relativize(file).toString()
-                zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                Files.copy(file, zipOutputStream)
-                zipOutputStream.closeEntry()
-            }
+            .forEach { zipOutputStream.addZipEntry(basePath.relativize(it)) }
     }
 
     private fun zipFilesOnly(subDir: Path?, zipOutputStream: ZipOutputStream) {
         Files.walk(subDir, 1)
             .filter { Files.isRegularFile(it) }
-            .forEach { file ->
-                val zipEntry = file.fileName.toString()
-                zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                Files.copy(file, zipOutputStream)
-                zipOutputStream.closeEntry()
-            }
+            .forEach { zipOutputStream.addZipEntry(it.fileName) }
     }
+}
+
+internal fun ZipOutputStream.addZipEntry(path: Path) {
+    putNextEntry(ZipEntry(path.toString()))
+    Files.copy(path, this)
+    closeEntry()
 }

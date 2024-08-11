@@ -3,12 +3,12 @@ package viewmodel
 import com.github.junrar.Junrar
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.nameWithoutExtension
 
 class RarToZipViewModel : ProcessViewModel() {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
+    private val rarExtension = "rar"
 
     override fun onProcessClick() {
         process { basePath ->
@@ -20,7 +20,7 @@ class RarToZipViewModel : ProcessViewModel() {
 
     private fun convert(subDir: Path) {
         Files.walk(subDir)
-            .filter { it.toString().endsWith(".rar") }
+            .filter { it.toString().endsWith(rarExtension, ignoreCase = true) }
             .forEach { rarFile ->
                 val unarchivedFolder = subDir.resolve("unrar_${rarFile.fileName}")
                 Files.createDirectory(unarchivedFolder)
@@ -48,11 +48,6 @@ internal fun zipFiles(unarchivedFolder: Path, zipFilePath: Path) {
     ZipOutputStream(Files.newOutputStream(zipFilePath)).use { zipOutputStream ->
         Files.walk(unarchivedFolder)
             .filter { Files.isRegularFile(it) }
-            .forEach { file ->
-                val zipEntry = unarchivedFolder.relativize(file).toString()
-                zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                Files.copy(file, zipOutputStream)
-                zipOutputStream.closeEntry()
-            }
+            .forEach { zipOutputStream.addZipEntry(unarchivedFolder.relativize(it)) }
     }
 }
