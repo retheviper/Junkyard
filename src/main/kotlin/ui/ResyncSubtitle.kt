@@ -8,14 +8,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import framework.LocalizationState
 import org.koin.compose.koinInject
 import viewmodel.ResyncSubtitleViewModel
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ResyncSubtitleView() {
     val localizationState: LocalizationState = koinInject()
