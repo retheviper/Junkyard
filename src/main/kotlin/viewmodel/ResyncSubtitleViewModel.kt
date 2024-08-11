@@ -2,6 +2,7 @@ package viewmodel
 
 import kotlin.io.path.extension
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.component.inject
 import service.ResyncSubtitleServiceStrategyFactory
 import service.ResyncSubtitleType
@@ -12,7 +13,7 @@ class ResyncSubtitleViewModel : ProcessViewModel() {
     private val strategyFactory: ResyncSubtitleServiceStrategyFactory by inject()
 
     private val _shiftMillis = MutableStateFlow(0)
-    val shiftMillis = _shiftMillis
+    val shiftMillis = _shiftMillis.asStateFlow()
 
     fun setShiftMillis(value: Int) {
         _shiftMillis.value = value

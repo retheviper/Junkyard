@@ -6,6 +6,7 @@ import java.nio.file.Path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -20,16 +21,16 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     open val targetExtensions: List<String> = emptyList()
 
     private val _path: MutableStateFlow<Path?> = MutableStateFlow(null)
-    val path: StateFlow<Path?> = _path
+    val path = _path.asStateFlow()
 
     private val _processed = MutableStateFlow(0)
-    val processed: StateFlow<Int> = _processed
+    val processed = _processed.asStateFlow()
 
     private val _failed = MutableStateFlow(0)
-    val failed: StateFlow<Int> = _failed
+    val failed = _failed.asStateFlow()
 
     private val _isProcessing = MutableStateFlow(false)
-    val isProcessing: StateFlow<Boolean> = _isProcessing
+    val isProcessing = _isProcessing.asStateFlow()
 
     fun setPath(path: Path) {
         _path.value = path

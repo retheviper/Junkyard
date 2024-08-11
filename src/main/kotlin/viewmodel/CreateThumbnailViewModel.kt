@@ -17,6 +17,7 @@ import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -35,22 +36,22 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
     private val streamingGifWriter by inject<StreamingGifWriter>()
 
     private val _targetFormats = MutableStateFlow(setOf(Format.JPEG, Format.PNG, Format.GIF, Format.WEBP))
-    val targetFormats = _targetFormats
+    val targetFormats = _targetFormats.asStateFlow()
 
     private val _imageOutputFormat = MutableStateFlow(ImageOutputFormat.JPEG)
-    val imageOutputFormat = _imageOutputFormat
+    val imageOutputFormat = _imageOutputFormat.asStateFlow()
 
     private val _option = MutableStateFlow(CreateThumbnailOption.FIXED_SIZE)
-    val option = _option
+    val option = _option.asStateFlow()
 
     private val _width = MutableStateFlow(200)
-    val width = _width
+    val width = _width.asStateFlow()
 
     private val _height = MutableStateFlow(200)
-    val height = _height
+    val height = _height.asStateFlow()
 
     private val _ratio = MutableStateFlow(50.0)
-    val ratio = _ratio
+    val ratio = _ratio.asStateFlow()
 
     fun addTargetFormat(format: Format) {
         _targetFormats.value += format

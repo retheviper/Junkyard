@@ -4,18 +4,19 @@ import java.nio.file.Files
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class ChangeExtensionViewModel : ProcessViewModel() {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
 
     private val _ignoreCase = MutableStateFlow(false)
-    val ignoreCase: MutableStateFlow<Boolean> = _ignoreCase
+    val ignoreCase = _ignoreCase.asStateFlow()
 
     private val _fromExtension = MutableStateFlow("jpeg")
-    val fromExtension: MutableStateFlow<String> = _fromExtension
+    val fromExtension = _fromExtension.asStateFlow()
 
     private val _toExtension = MutableStateFlow("jpg")
-    val toExtension: MutableStateFlow<String> = _toExtension
+    val toExtension = _toExtension.asStateFlow()
 
     fun toggleIgnoreCase() {
         _ignoreCase.value = !_ignoreCase.value

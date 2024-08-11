@@ -16,8 +16,10 @@ import java.util.UUID
 import java.util.zip.ZipInputStream
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
-import kotlin.jvm.optionals.getOrNull
+import kotlin.jvm.optionals.getOrElse
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -32,13 +34,13 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
     private val gif2WebpWriter by inject<Gif2WebpWriter>()
 
     private val _fromFormat = MutableStateFlow(Format.JPEG)
-    val fromFormat: MutableStateFlow<Format> = _fromFormat
+    val fromFormat = _fromFormat.asStateFlow()
 
     private val _toFormat = MutableStateFlow(Format.WEBP)
-    val toFormat: MutableStateFlow<Format> = _toFormat
+    val toFormat = _toFormat.asStateFlow()
 
     private val _includeArchiveFiles = MutableStateFlow(false)
-    val includeArchiveFiles: MutableStateFlow<Boolean> = _includeArchiveFiles
+    val includeArchiveFiles = _includeArchiveFiles.asStateFlow()
 
     fun setFromFormat(format: Format) {
         _fromFormat.value = format
@@ -58,80 +60,48 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
                 .filter { file ->
                     fromFormat.value.toExtension().any {
                         file.extension.equals(it, true)
-                    } || (includeArchiveFiles.value && ArchiveFormat.entries.any {
-                        file.extension.equals(it.name, true)
-                    })
+                    } || (includeArchiveFiles.value && file.isArchiveFile)
                 }
                 .forEach { file ->
-                    if (includeArchiveFiles.value && ArchiveFormat.entries.any {
-                            file.extension.equals(it.name, true)
-                        }) {
-                        handleArchiveFile(file)
-                    } else {
-                        runCatching {
+                    processWithCount {
+                        if (includeArchiveFiles.value && file.isArchiveFile) {
+                            val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
+                            runCatching { handleArchiveFile(file, tempPath) }
+                                .exceptionOrNull()
+                                .also { tempPath.toFile().deleteRecursively() }
+                        } else {
                             handleImageFile(file)
-                        }.onSuccess {
                             Files.deleteIfExists(file)
-                            incrementProcessed()
-                        }.onFailure {
-                            incrementFailed()
                         }
                     }
                 }
         }
     }
 
-    private fun handleArchiveFile(zipFilePath: Path) {
-        val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
-
-        runCatching {
-            ZipInputStream(Files.newInputStream(zipFilePath)).use { zipInputStream ->
-                var entry = zipInputStream.nextEntry
-                while (entry != null) {
-                    val entryPath = tempPath.resolve(entry.name)
-                    Files.createDirectories(entryPath.parent)
-                    Files.copy(zipInputStream, entryPath)
-                    entry = zipInputStream.nextEntry
-                }
+    private fun handleArchiveFile(zipFilePath: Path, tempPath: Path) {
+        ZipInputStream(Files.newInputStream(zipFilePath)).use { zipInputStream ->
+            var entry = zipInputStream.nextEntry
+            while (entry != null) {
+                val entryPath = tempPath.resolve(entry.name)
+                Files.createDirectories(entryPath.parent)
+                Files.copy(zipInputStream, entryPath)
+                entry = zipInputStream.nextEntry
             }
-        }.onFailure {
-            incrementFailed()
-            tempPath.toFile().deleteRecursively()
-            return
         }
 
-        runCatching {
-            Files.walk(tempPath)
-                .filter { Files.isRegularFile(it) }
-                .forEach { file ->
-                    runCatching {
-                        handleImageFile(file)
-                    }.onSuccess {
-                        Files.deleteIfExists(file)
-                    }.onFailure {
-                        throw it
-                    }
-                }
-        }.onFailure {
-            incrementFailed()
-            tempPath.toFile().deleteRecursively()
-            return
-        }
+        Files.walk(tempPath)
+            .filter { Files.isRegularFile(it) }
+            .forEach { file ->
+                handleImageFile(file)
+                Files.deleteIfExists(file)
+            }
 
-        runCatching {
-            zipFiles(tempPath, zipFilePath)
-        }.onSuccess {
-            incrementProcessed()
-        }.onFailure {
-            incrementFailed()
-        }
-
-        tempPath.toFile().deleteRecursively()
+        zipFiles(tempPath, zipFilePath)
     }
 
     private fun handleImageFile(filePath: Path) {
         val data = Files.readAllBytes(filePath)
-        val format = FormatDetector.detect(data).getOrNull()
+        val format = FormatDetector.detect(data).getOrElse { return }
 
         if (fromFormat.value != format) {
             return
@@ -174,4 +144,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
         val writer = getSuitableImageWriter(toFormat)
         image.output(writer, filePath)
     }
+
+    private val Path.isArchiveFile: Boolean
+        get() = ArchiveFormat.entries.any { extension.equals(it.name, true) }
 }

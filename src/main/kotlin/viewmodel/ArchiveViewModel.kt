@@ -5,13 +5,13 @@ import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class ArchiveViewModel : ProcessViewModel() {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
 
     private val _isParentDirectoryIncluded = MutableStateFlow(false)
-    val isParentDirectoryIncluded: StateFlow<Boolean> = _isParentDirectoryIncluded
+    val isParentDirectoryIncluded = _isParentDirectoryIncluded.asStateFlow()
 
     fun toggleParentDirectory() {
         _isParentDirectoryIncluded.value = !_isParentDirectoryIncluded.value
