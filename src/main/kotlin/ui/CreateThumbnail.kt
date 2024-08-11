@@ -45,7 +45,10 @@ fun CreateThumbnailView() {
             tooltip = localizationState.getString("tooltip_create_thumbnail")
         )
 
-        Text("${localizationState.getString("target_format")}:")
+        Text(
+            "${localizationState.getString("target_format")}:",
+            modifier = Modifier.padding(start = 16.dp)
+        )
 
         Row {
             Format.entries.forEach { format ->
@@ -74,7 +77,10 @@ fun CreateThumbnailView() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("${localizationState.getString("resize_options")}:")
+        Text(
+            "${localizationState.getString("resize_options")}:",
+            modifier = Modifier.padding(start = 16.dp)
+        )
 
         Row {
             CreateThumbnailOption.entries.forEach { option ->

@@ -32,7 +32,10 @@ fun ResyncSubtitleView() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(localizationState.getString("input_shift_milliseconds"))
+        Text(
+            localizationState.getString("input_shift_milliseconds"),
+            modifier = Modifier.padding(start = 16.dp)
+        )
 
         NumberInputField(
             number = shiftMillis.value,
@@ -44,7 +47,7 @@ fun ResyncSubtitleView() {
                 }
             },
             onIncrease = { viewModel.increaseShiftMillis() },
-            onDecrease = { viewModel.decreaseShiftMillis() },
+            onDecrease = { viewModel.decreaseShiftMillis() }
         )
 
         ProcessesSection(viewModel)

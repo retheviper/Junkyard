@@ -200,7 +200,9 @@ fun <T : Enum<T>> DropdownMenuBox(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit
 ) {
-    Column {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
         Text(label)
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -250,8 +252,7 @@ fun CheckboxSection(
 ) {
     Row(
         modifier = Modifier
-            .clickable { onClick() }
-            .padding(8.dp),
+            .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
@@ -268,7 +269,9 @@ fun LabeledTextField(
     value: String,
     onValueChange: (String) -> Unit
 ) {
-    Column {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
         Text(label)
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -287,7 +290,9 @@ fun LabeledTextField(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TitleTextSection(titleText: String, tooltip: String) {
-    Row {
+    Row(
+        modifier = Modifier.padding(8.dp),
+    ) {
         Text(
             titleText,
             fontSize = 26.sp
@@ -340,6 +345,7 @@ fun NumberInputField(
                     Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Decrease")
                 }
             }
-        }
+        },
+        modifier = Modifier.padding(16.dp)
     )
 }
