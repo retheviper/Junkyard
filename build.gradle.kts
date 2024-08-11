@@ -46,6 +46,9 @@ compose.desktop {
             macOS {
                 iconFile = file("src/main/resources/icons/Junkyard.icns")
             }
+            windows {
+                iconFile = file("src/main/resources/icons/Junkyard.ico")
+            }
         }
     }
 }
