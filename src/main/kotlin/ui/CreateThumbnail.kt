@@ -40,7 +40,10 @@ fun CreateThumbnailView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(localizationState.getString("title_create_thumbnail"))
+        TitleTextSection(
+            titleText = localizationState.getString("title_create_thumbnail"),
+            tooltip = localizationState.getString("tooltip_create_thumbnail")
+        )
 
         Text("${localizationState.getString("target_format")}:")
 

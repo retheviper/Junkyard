@@ -25,7 +25,10 @@ fun ResyncSubtitleView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(localizationState.getString("title_shift_subtitle"))
+        TitleTextSection(
+            titleText = localizationState.getString("title_shift_subtitle"),
+            tooltip = localizationState.getString("tooltip_shift_subtitle")
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 

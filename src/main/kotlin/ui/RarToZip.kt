@@ -20,7 +20,10 @@ fun RarToZipView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(localizationState.getString("title_rar_to_zip"))
+        TitleTextSection(
+            titleText = localizationState.getString("title_rar_to_zip"),
+            tooltip = localizationState.getString("tooltip_rar_to_zip")
+        )
 
         ProcessesSection(viewModel)
     }

@@ -27,7 +27,10 @@ fun ChangeExtensionView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(localizationState.getString("title_change_file_extension"))
+        TitleTextSection(
+            titleText = localizationState.getString("title_change_file_extension"),
+            tooltip = localizationState.getString("tooltip_change_file_extension")
+        )
 
         CheckboxSection(
             onClick = { viewModel.toggleIgnoreCase() },

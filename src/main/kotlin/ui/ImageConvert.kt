@@ -35,7 +35,10 @@ fun ImageConvertView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(localizationState.getString("title_convert_image_format"))
+        TitleTextSection(
+            titleText = localizationState.getString("title_convert_image_format"),
+            tooltip = localizationState.getString("tooltip_convert_image_format")
+        )
 
         Row {
             DropdownMenuBox(

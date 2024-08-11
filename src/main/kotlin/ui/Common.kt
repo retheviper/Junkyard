@@ -1,6 +1,9 @@
 package ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
+import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -22,11 +25,14 @@ import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
@@ -38,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import framework.LocalizationState
@@ -221,12 +228,37 @@ fun LabeledTextField(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TitleTextSection(text: String) {
-    Text(
-        text,
-        fontSize = 26.sp
-    )
+fun TitleTextSection(titleText: String, tooltip: String) {
+    Row {
+        Text(
+            titleText,
+            fontSize = 26.sp
+        )
+
+        TooltipArea(
+            tooltip = {
+                Surface(
+                    modifier = Modifier.padding(8.dp),
+                    color = MaterialTheme.colors.secondary,
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = tooltip,
+                        color = MaterialTheme.colors.onSecondary,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "Info",
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
 
     Divider(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp))
 }

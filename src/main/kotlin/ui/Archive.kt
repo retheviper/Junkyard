@@ -24,7 +24,10 @@ fun ArchiveView() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        TitleTextSection(localizationState.getString("title_archive_subdirectories"))
+        TitleTextSection(
+            titleText = localizationState.getString("title_archive_subdirectories"),
+            tooltip = localizationState.getString("tooltip_archive_subdirectories")
+        )
 
         CheckboxSection(
             onClick = { viewModel.toggleParentDirectory() },
