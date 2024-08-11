@@ -42,6 +42,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "junkyard"
             packageVersion = "1.0.0"
+
+            macOS {
+                iconFile = file("src/main/resources/icons/Junkyard.icns")
+            }
         }
     }
 }
