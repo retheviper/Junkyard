@@ -18,6 +18,7 @@ import kotlin.io.path.nameWithoutExtension
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.yield
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -95,6 +96,7 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
             setTotal(targets.size)
 
             targets.forEach { file ->
+                yield()
                 val data = Files.readAllBytes(file)
                 val format = FormatDetector.detect(data).getOrNull()
 

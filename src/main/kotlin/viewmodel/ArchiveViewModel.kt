@@ -6,6 +6,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.yield
 
 class ArchiveViewModel : ProcessViewModel() {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
@@ -26,6 +27,7 @@ class ArchiveViewModel : ProcessViewModel() {
             setTotal(targets.size)
 
             targets.forEach { subDir ->
+                yield()
                 val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
                 processWithCount {
                     ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->

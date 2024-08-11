@@ -3,9 +3,12 @@ package viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.nio.file.Path
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -27,6 +30,8 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
 
     private val _failed = MutableStateFlow(0)
     val failed = _failed.asStateFlow()
+
+    private val _job = MutableStateFlow<Job?>(null)
 
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing = _isProcessing.asStateFlow()
@@ -76,18 +81,23 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
             .onFailure { incrementFailed(); it.printStackTrace() }
     }
 
-    protected fun process(block: (Path) -> Unit) {
+    protected fun process(block: suspend (Path) -> Unit) {
         val basePath = path.value ?: return
 
-        viewModelScope.launch {
+        val job = viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 startProcessing()
-                try {
-                    block(basePath)
-                } finally {
-                    stopProcessing()
-                }
+                runCatching { block(basePath) }
+                    .also { stopProcessing() }
             }
         }
+
+        _job.value = job
+    }
+
+    fun cancel() {
+        _job.value?.cancel()
+        _job.value = null
+        stopProcessing()
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Checkbox
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
@@ -124,10 +125,25 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Button(
-                        enabled = path.value != null && !isProcessing.value,
-                        onClick = viewModel::onProcessClick
+                        enabled = path.value != null,
+                        onClick = {
+                            if (isProcessing.value) {
+                                viewModel.cancel()
+                            } else {
+                                viewModel.onProcessClick()
+                            }
+                        },
+                        colors = if (isProcessing.value) {
+                            ButtonDefaults.buttonColors(backgroundColor = Color.Red)
+                        } else {
+                            ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary)
+                        }
                     ) {
-                        Text(localizationState.getString("process"))
+                        if (isProcessing.value) {
+                            Text(localizationState.getString("cancel"))
+                        } else {
+                            Text(localizationState.getString("process"))
+                        }
                     }
                 }
 
@@ -171,11 +187,7 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                     }
                 }
             }
-
         }
-
-
-
     }
 }
 

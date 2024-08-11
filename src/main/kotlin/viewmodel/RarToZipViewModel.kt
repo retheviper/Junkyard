@@ -6,6 +6,7 @@ import java.nio.file.Path
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
+import kotlinx.coroutines.yield
 
 class RarToZipViewModel : ProcessViewModel() {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
@@ -20,7 +21,10 @@ class RarToZipViewModel : ProcessViewModel() {
 
             setTotal(targets.size)
 
-            targets.forEach(::convert)
+            targets.forEach {
+                yield()
+                convert(it)
+            }
         }
     }
 

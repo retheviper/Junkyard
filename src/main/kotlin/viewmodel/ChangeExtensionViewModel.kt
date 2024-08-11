@@ -5,6 +5,7 @@ import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.yield
 
 class ChangeExtensionViewModel : ProcessViewModel() {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
@@ -39,6 +40,7 @@ class ChangeExtensionViewModel : ProcessViewModel() {
             setTotal(targets.size)
 
             targets.forEach {
+                yield()
                 val newFileName = "${it.nameWithoutExtension}.${toExtension.value}"
                 processWithCount {
                     Files.move(it, it.resolveSibling(newFileName))

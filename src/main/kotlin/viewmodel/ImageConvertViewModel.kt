@@ -19,6 +19,7 @@ import kotlin.io.path.nameWithoutExtension
 import kotlin.jvm.optionals.getOrElse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.yield
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -66,6 +67,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
             setTotal(targets.size)
 
             targets.forEach { file ->
+                yield()
                 processWithCount {
                     if (includeArchiveFiles.value && file.isArchiveFile) {
                         val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
