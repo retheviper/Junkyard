@@ -52,7 +52,6 @@ import framework.LocalizationState
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerType
-import java.awt.SystemColor.text
 import org.koin.compose.koinInject
 import viewmodel.ProcessViewModel
 import viewmodel.TargetPickerType
