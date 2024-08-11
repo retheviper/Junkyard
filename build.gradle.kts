@@ -24,8 +24,8 @@ dependencies {
     implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
     implementation("org.jetbrains.androidx.navigation:navigation-compose-desktop:2.8.0-alpha08")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0-RC")
-    implementation("io.insert-koin:koin-core:3.6.0-alpha1")
-    implementation("io.insert-koin:koin-compose:3.6.0-alpha1")
+    implementation("io.insert-koin:koin-core:4.0.0-RC1")
+    implementation("io.insert-koin:koin-compose:4.0.0-RC1")
     implementation("io.github.vinceglb:filekit-core-jvm:0.7.0")
     implementation("io.github.vinceglb:filekit-compose:0.7.0")
     implementation("com.github.junrar:junrar:7.5.5")
@@ -40,14 +40,22 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "junkyard"
+            packageName = "Junkyard"
             packageVersion = "1.0.0"
 
             macOS {
                 iconFile = file("src/main/resources/icons/Junkyard.icns")
+                bundleID = "com.retheviper.junkyard"
+                dockName = "Junkyard"
+                appCategory = "public.app-category.utilities"
             }
             windows {
                 iconFile = file("src/main/resources/icons/Junkyard.ico")
+                dirChooser = true
+                upgradeUuid = "50be04cb-ea58-423a-8a41-ed69ce332700"
+            }
+            linux {
+                iconFile = file("src/main/resources/icons/Junkyard.png")
             }
         }
     }
