@@ -36,9 +36,7 @@ import framework.MyTheme
 import framework.OS
 import framework.appModules
 import framework.rememberLocalizationState
-import java.awt.Desktop
 import java.awt.Dimension
-import java.awt.SystemColor.text
 import java.util.Locale
 import org.koin.compose.koinInject
 import org.koin.core.context.GlobalContext.startKoin

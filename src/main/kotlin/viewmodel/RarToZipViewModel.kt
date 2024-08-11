@@ -22,33 +22,37 @@ class RarToZipViewModel : ProcessViewModel() {
         Files.walk(subDir)
             .filter { it.toString().endsWith(".rar") }
             .forEach { rarFile ->
-                val destinationFolder = subDir.resolve("unrar_${rarFile.fileName}")
-                Files.createDirectory(destinationFolder)
-                runCatching { Junrar.extract(rarFile.toFile(), destinationFolder.toFile()) }
+                val unarchivedFolder = subDir.resolve("unrar_${rarFile.fileName}")
+                Files.createDirectory(unarchivedFolder)
+                runCatching { Junrar.extract(rarFile.toFile(), unarchivedFolder.toFile()) }
                     .onFailure {
-                        destinationFolder.toFile().deleteRecursively()
+                        unarchivedFolder.toFile().deleteRecursively()
                         incrementFailed()
                         return@forEach
                     }
 
-                zipFiles(subDir, rarFile, destinationFolder)
+                zipFiles(subDir, rarFile, unarchivedFolder)
 
-                destinationFolder.toFile().deleteRecursively()
+                unarchivedFolder.toFile().deleteRecursively()
                 incrementProcessed()
             }
     }
 
-    private fun zipFiles(subDir: Path, rarFile: Path, destinationFolder: Path) {
+    private fun zipFiles(subDir: Path, rarFile: Path, unarchivedFolder: Path) {
         val zipFilePath = subDir.resolve("${rarFile.nameWithoutExtension}.zip")
-        ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
-            Files.walk(destinationFolder)
-                .filter { Files.isRegularFile(it) }
-                .forEach { file ->
-                    val zipEntry = destinationFolder.relativize(file).toString()
-                    zipOutputStream.putNextEntry(ZipEntry(zipEntry))
-                    Files.copy(file, zipOutputStream)
-                    zipOutputStream.closeEntry()
-                }
-        }
+        zipFiles(unarchivedFolder, zipFilePath)
+    }
+}
+
+internal fun zipFiles(unarchivedFolder: Path, zipFilePath: Path) {
+    ZipOutputStream(Files.newOutputStream(zipFilePath)).use { zipOutputStream ->
+        Files.walk(unarchivedFolder)
+            .filter { Files.isRegularFile(it) }
+            .forEach { file ->
+                val zipEntry = unarchivedFolder.relativize(file).toString()
+                zipOutputStream.putNextEntry(ZipEntry(zipEntry))
+                Files.copy(file, zipOutputStream)
+                zipOutputStream.closeEntry()
+            }
     }
 }

@@ -40,6 +40,12 @@ fun ImageConvertView() {
             tooltip = localizationState.getString("tooltip_convert_image_format")
         )
 
+        CheckboxSection(
+            onClick = { viewModel.toggleIncludeArchiveFiles() },
+            checked = viewModel.includeArchiveFiles.collectAsState().value,
+            text = localizationState.getString("include_archive_files")
+        )
+
         Row {
             DropdownMenuBox(
                 label = "${localizationState.getString("from_format")}t:",
