@@ -48,7 +48,7 @@ fun ImageConvertView() {
 
         Row {
             DropdownMenuBox(
-                label = "${localizationState.getString("from_format")}t:",
+                label = "${localizationState.getString("from_format")}:",
                 selectedItem = fromFormat.value,
                 items = Format.entries,
                 onItemSelected = {
@@ -65,7 +65,7 @@ fun ImageConvertView() {
             Spacer(modifier = Modifier.width(16.dp))
 
             DropdownMenuBox(
-                label = "${localizationState.getString("to_format")}}:",
+                label = "${localizationState.getString("to_format")}:",
                 selectedItem = toFormat.value,
                 items = selectableFormats,
                 onItemSelected = { viewModel.setToFormat(it) },
