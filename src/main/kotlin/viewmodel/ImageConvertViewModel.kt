@@ -60,7 +60,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
                 .filter { file ->
                     fromFormat.value.toExtension().any {
                         file.extension.equals(it, true)
-                    } || (includeArchiveFiles.value && file.isArchiveFile)
+                    } || (_includeArchiveFiles.value && file.isArchiveFile)
                 }
                 .toList()
 
@@ -69,7 +69,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
             targets.forEach { file ->
                 yield()
                 processWithCount {
-                    if (includeArchiveFiles.value && file.isArchiveFile) {
+                    if (_includeArchiveFiles.value && file.isArchiveFile) {
                         val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
                         runCatching { handleArchiveFile(file, tempPath) }
                             .exceptionOrNull()
@@ -88,8 +88,11 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
             var entry = zipInputStream.nextEntry
             while (entry != null) {
                 val entryPath = tempPath.resolve(entry.name)
-                Files.createDirectories(entryPath.parent)
-                Files.copy(zipInputStream, entryPath)
+                if (entry.isDirectory) {
+                    Files.createDirectories(entryPath)
+                } else {
+                    Files.copy(zipInputStream, entryPath)
+                }
                 entry = zipInputStream.nextEntry
             }
         }
