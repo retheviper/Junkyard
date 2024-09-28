@@ -41,7 +41,7 @@ sealed class ResyncSubtitleServiceStrategy {
 
 class SmiResyncSubtitleServiceStrategy : ResyncSubtitleServiceStrategy() {
     override val type = ResyncSubtitleType.SMI
-    private val smiPattern = """(<SYNC Start=)(\d+)(>.*?)(</SYNC>)?""".toRegex()
+    private val smiPattern = """(?i)(<SYNC\s*Start\s*=\s*)(\d+)(>.*?)(</SYNC>)?""".toRegex()
 
     override fun shiftSubtitle(file: Path, shiftMillis: Int) {
         val content = Files.readString(file)
