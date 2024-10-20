@@ -1,9 +1,9 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    kotlin("jvm")
-    id("org.jetbrains.compose")
-    id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.jetbrains.compose)
+    alias(libs.plugins.compose.compiler)
 }
 
 group = "com.retheviper"
@@ -16,22 +16,18 @@ repositories {
 }
 
 dependencies {
-    // Note, if you develop a library, you should use compose.desktop.common.
-    // compose.desktop.currentOs should be used in launcher-sourceSet
-    // (in a separate module for demo project and in testMain).
-    // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
-    implementation("org.jetbrains.androidx.navigation:navigation-compose-desktop:2.8.0-alpha10")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0-RC")
-    implementation("io.insert-koin:koin-core:4.0.0")
-    implementation("io.insert-koin:koin-compose:4.0.0")
-    implementation("io.github.vinceglb:filekit-core-jvm:0.8.7")
-    implementation("io.github.vinceglb:filekit-compose:0.8.7")
-    implementation("com.github.junrar:junrar:7.5.5")
-    implementation("com.sksamuel.scrimage:scrimage-core:4.2.0")
-    implementation("com.sksamuel.scrimage:scrimage-webp:4.2.0")
-    implementation("org.slf4j:slf4j-simple:2.0.13")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.navigation.compose.desktop)
+    implementation(libs.kotlinx.coroutines.swing)
+    implementation(libs.koin.core)
+    implementation(libs.koin.compose)
+    implementation(libs.filekit.core)
+    implementation(libs.filekit.compose)
+    implementation(libs.junrar)
+    implementation(libs.scrimage.core)
+    implementation(libs.scrimage.webp)
+    implementation(libs.slf4j.simple)
 }
 
 compose.desktop {
