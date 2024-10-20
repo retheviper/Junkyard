@@ -1,5 +1,8 @@
 package viewmodel
 
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.nio.file.Path
@@ -12,6 +15,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
+import java.awt.datatransfer.DataFlavor
+import java.io.File
 
 enum class TargetPickerType {
     DIRECTORY,
@@ -99,5 +104,32 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
         _job.value?.cancel()
         _job.value = null
         stopProcessing()
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    fun handleDrop(event: DragAndDropEvent, target: TargetPickerType): Boolean {
+        val files = event.awtTransferable
+            .let { transferable ->
+                (transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<*>)
+                    .takeIf { transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor) }
+            }?.filterIsInstance<File>()
+
+        files?.forEach { file ->
+            when (target) {
+                TargetPickerType.DIRECTORY -> {
+                    if (file.isDirectory) {
+                        setPath(file.toPath())
+                        return true
+                    }
+                }
+                TargetPickerType.FILE -> {
+                    if (file.isFile && targetExtensions.any { file.extension.equals(it, true) }) {
+                        setPath(file.toPath())
+                        return true
+                    }
+                }
+            }
+        }
+        return false
     }
 }

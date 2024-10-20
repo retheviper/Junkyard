@@ -1,5 +1,6 @@
 package ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sksamuel.scrimage.format.Format
 import framework.LocalizationState
@@ -25,6 +27,7 @@ import org.koin.compose.koinInject
 import viewmodel.CreateThumbnailOption
 import viewmodel.CreateThumbnailViewModel
 import viewmodel.ImageOutputFormat
+import viewmodel.TargetPickerType
 
 @Composable
 fun CreateThumbnailView() {
@@ -34,11 +37,17 @@ fun CreateThumbnailView() {
     val outputFormat = viewModel.imageOutputFormat.collectAsState()
     val selectedOption = viewModel.option.collectAsState()
     var outputFormatExpanded by remember { mutableStateOf(false) }
+    val isDragOver = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .commonDragAndDrop(
+                isDragOver = isDragOver,
+                onDrop = { viewModel.handleDrop(it, TargetPickerType.DIRECTORY) }
+            )
+            .background(if (isDragOver.value) Color.LightGray else Color.Transparent)
     ) {
         TitleTextSection(
             titleText = localizationState.getString("title_create_thumbnail"),

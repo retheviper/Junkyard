@@ -5,6 +5,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,9 +40,13 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -347,5 +352,34 @@ fun NumberInputField(
             }
         },
         modifier = Modifier.padding(16.dp)
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun Modifier.commonDragAndDrop(
+    isDragOver: MutableState<Boolean>,
+    onDrop: (DragAndDropEvent) -> Boolean
+): Modifier {
+    val target = remember {
+        object : DragAndDropTarget {
+            override fun onStarted(event: DragAndDropEvent) {
+                isDragOver.value = true
+            }
+
+            override fun onEnded(event: DragAndDropEvent) {
+                isDragOver.value = false
+            }
+
+            override fun onDrop(event: DragAndDropEvent): Boolean {
+                isDragOver.value = false
+                return onDrop(event)
+            }
+        }
+    }
+
+    return this.dragAndDropTarget(
+        shouldStartDragAndDrop = { true },
+        target = target
     )
 }
