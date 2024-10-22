@@ -114,22 +114,11 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
                     .takeIf { transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor) }
             }?.filterIsInstance<File>()
 
-        files?.forEach { file ->
-            when (target) {
-                TargetPickerType.DIRECTORY -> {
-                    if (file.isDirectory) {
-                        setPath(file.toPath())
-                        return true
-                    }
-                }
-                TargetPickerType.FILE -> {
-                    if (file.isFile && targetExtensions.any { file.extension.equals(it, true) }) {
-                        setPath(file.toPath())
-                        return true
-                    }
-                }
-            }
+        val isTarget = when (target) {
+            TargetPickerType.DIRECTORY -> File::isDirectory
+            TargetPickerType.FILE -> { file -> file.isFile && targetExtensions.any { file.extension.equals(it, true) } }
         }
-        return false
+
+        return files?.any(isTarget)?.also { if (it) setPath(files.first().toPath()) } == true
     }
 }
