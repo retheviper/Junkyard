@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import java.awt.datatransfer.DataFlavor
 import java.io.File
+import kotlin.coroutines.resume
 
 enum class TargetPickerType {
     DIRECTORY,
@@ -119,6 +120,8 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
             TargetPickerType.FILE -> { file -> file.isFile && targetExtensions.any { file.extension.equals(it, true) } }
         }
 
-        return files?.any(isTarget)?.also { if (it) setPath(files.first().toPath()) } == true
+        return files?.firstOrNull { isTarget(it) }
+            ?.let { setPath(it.toPath()); true }
+            ?: false
     }
 }
