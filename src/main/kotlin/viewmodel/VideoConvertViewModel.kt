@@ -44,8 +44,8 @@ enum class VideoCodec(
         )
     );
 
-    fun getEncoder(os: OS, useHardware: Boolean): String {
-        return if (useHardware) hardwareEncoders[os] ?: softwareEncoder else softwareEncoder
+    fun getEncoder(useHardware: Boolean): String {
+        return if (useHardware) hardwareEncoders[OS.current] ?: softwareEncoder else softwareEncoder
     }
 }
 
@@ -85,7 +85,7 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
 
             setTotal(targets.size)
 
-            val encoder = videoCodec.value.getEncoder(OS.current, useHardwareEncoder.value)
+            val encoder = videoCodec.value.getEncoder(useHardwareEncoder.value)
 
             targets.forEach { file ->
                 yield()
