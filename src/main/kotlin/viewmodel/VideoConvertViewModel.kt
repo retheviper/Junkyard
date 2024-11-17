@@ -7,6 +7,7 @@ import kotlinx.coroutines.yield
 import org.koin.core.component.KoinComponent
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Base64.getEncoder
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
@@ -22,8 +23,30 @@ enum class VideoFormat(val extensions: List<String>) {
     MPG(listOf("mpg", "mpeg"))
 }
 
-enum class VideoCodec {
-    H264, H265
+enum class VideoCodec(
+    val softwareEncoder: String,
+    val hardwareEncoders: Map<OS, String>
+) {
+    H264(
+        softwareEncoder = "libx264",
+        hardwareEncoders = mapOf(
+            OS.WINDOWS to "h264_nvenc",
+            OS.MAC to "h264_videotoolbox",
+            OS.LINUX to "h264_nvenc"
+        )
+    ),
+    H265(
+        softwareEncoder = "libx265",
+        hardwareEncoders = mapOf(
+            OS.WINDOWS to "hevc_nvenc",
+            OS.MAC to "hevc_videotoolbox",
+            OS.LINUX to "hevc_nvenc"
+        )
+    );
+
+    fun getEncoder(os: OS, useHardware: Boolean): String {
+        return if (useHardware) hardwareEncoders[os] ?: softwareEncoder else softwareEncoder
+    }
 }
 
 class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
@@ -62,11 +85,13 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
 
             setTotal(targets.size)
 
+            val encoder = videoCodec.value.getEncoder(OS.current, useHardwareEncoder.value)
+
             targets.forEach { file ->
                 yield()
                 processWithCount {
                     updateCurrentFile(file)
-                    runCatching { convertVideo(file) }
+                    runCatching { convertVideo(encoder, file) }
                         .onSuccess { Files.deleteIfExists(file) }
                         .getOrThrow()
                 }
@@ -74,15 +99,14 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
         }
     }
 
-    private fun convertVideo(filePath: Path) {
-        val codec = getCodec(videoCodec.value)
+    private fun convertVideo(encoder: String, filePath: Path) {
         val targetPath =
             filePath.resolveSibling("${filePath.nameWithoutExtension}.mp4")
 
         val process = ProcessBuilder(
             "ffmpeg",
             "-i", filePath.absolutePathString(),
-            "-c:v", codec,
+            "-c:v", encoder,
             "-c:a", "aac",
             targetPath.absolutePathString()
         ).start()
@@ -92,31 +116,6 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
         if (exitCode != 0) {
             val errorStream = process.errorStream.bufferedReader().use { it.readText() }
             throw RuntimeException("FFmpeg failed with exit code $exitCode. Error: $errorStream")
-        }
-    }
-
-    private fun getCodec(codec: VideoCodec): String {
-        val os = OS.current
-        val useHardwareEncoder = useHardwareEncoder.value
-
-        return when (codec) {
-            VideoCodec.H264 -> {
-                when (os) {
-                    OS.WINDOWS -> if (useHardwareEncoder) "h264_nvenc" else "libx264"
-                    OS.MAC -> if (useHardwareEncoder) "h264_videotoolbox" else "libx264"
-                    OS.LINUX -> if (useHardwareEncoder) "h264_nvenc" else "libx264"
-                    else -> "libx264"
-                }
-            }
-
-            VideoCodec.H265 -> {
-                when (os) {
-                    OS.WINDOWS -> if (useHardwareEncoder) "hevc_nvenc" else "libx265"
-                    OS.MAC -> if (useHardwareEncoder) "hevc_videotoolbox" else "libx265"
-                    OS.LINUX -> if (useHardwareEncoder) "hevc_nvenc" else "libx265"
-                    else -> "libx265"
-                }
-            }
         }
     }
 }
