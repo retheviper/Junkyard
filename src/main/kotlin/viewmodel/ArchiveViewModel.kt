@@ -20,14 +20,17 @@ class ArchiveViewModel : ProcessViewModel() {
 
     override fun onProcessClick() {
         process { basePath ->
-            val targets = Files.walk(basePath, 1)
-                .filter { Files.isDirectory(it) && it != basePath }
-                .toList()
+            val targets = Files.walk(basePath, 1).use { stream ->
+                stream
+                    .filter { Files.isDirectory(it) && it != basePath }
+                    .toList()
+            }
 
             setTotal(targets.size)
 
             targets.forEach { subDir ->
                 yield()
+                updateCurrentFile(subDir)
                 val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
                 processWithCount {
                     ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
@@ -45,15 +48,21 @@ class ArchiveViewModel : ProcessViewModel() {
     }
 
     private fun zipDirectory(subDir: Path?, basePath: Path, zipOutputStream: ZipOutputStream) {
-        Files.walk(subDir)
-            .filter { Files.isRegularFile(it) }
-            .forEach { zipOutputStream.addZipEntry(it, basePath.relativize(it)) }
+        subDir?.let {
+            Files.walk(it).use { stream ->
+                stream.filter { Files.isRegularFile(it) }
+                    .forEach { zipOutputStream.addZipEntry(it, basePath.relativize(it)) }
+            }
+        }
     }
 
     private fun zipFilesOnly(subDir: Path?, zipOutputStream: ZipOutputStream) {
-        Files.walk(subDir, 1)
-            .filter { Files.isRegularFile(it) }
-            .forEach { zipOutputStream.addZipEntry(it, it.fileName) }
+        subDir?.let {
+            Files.walk(it, 1).use { stream ->
+                stream.filter { Files.isRegularFile(it) }
+                    .forEach { zipOutputStream.addZipEntry(it, it.fileName) }
+            }
+        }
     }
 }
 

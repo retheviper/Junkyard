@@ -33,9 +33,11 @@ class ChangeExtensionViewModel : ProcessViewModel() {
 
     override fun onProcessClick() {
         process { basePath ->
-            val targets = Files.walk(basePath)
-                .filter { it.extension.equals(fromExtension.value, ignoreCase.value) }
-                .toList()
+            val targets = Files.walk(basePath).use { stream ->
+                stream.filter { Files.isRegularFile(it) }
+                    .filter { it != basePath }
+                    .toList()
+            }
 
             setTotal(targets.size)
 
@@ -43,6 +45,7 @@ class ChangeExtensionViewModel : ProcessViewModel() {
                 yield()
                 val newFileName = "${it.nameWithoutExtension}.${toExtension.value}"
                 processWithCount {
+                    updateCurrentFile(it)
                     Files.move(it, it.resolveSibling(newFileName))
                 }
             }

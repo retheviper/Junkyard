@@ -19,9 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Checkbox
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -30,7 +32,6 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Snackbar
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -42,6 +43,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +72,9 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
     val processed = viewModel.processed.collectAsState()
     val failed = viewModel.failed.collectAsState()
     val progress = viewModel.progress.collectAsState()
+    val currentFile = viewModel.currentFile.collectAsState()
+    val showStatusDialog = remember { mutableStateOf(false) }
+
     val launcher = when (viewModel.targetPickerType) {
         TargetPickerType.DIRECTORY -> rememberDirectoryPickerLauncher(
             title = localizationState.getString("select_directory"),
@@ -94,7 +99,6 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-
         Spacer(modifier = Modifier.weight(1f))
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -103,19 +107,18 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             Column(
                 horizontalAlignment = Alignment.End
             ) {
-                Text(
-                    text = "${localizationState.getString("success")}: ${processed.value}",
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = "${localizationState.getString("failed")}: ${failed.value}",
-                    fontSize = 16.sp
-                )
                 Text("${localizationState.getString("selected_path")}: ${path.value ?: localizationState.getString("none")}")
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
+                    if (isProcessing.value) {
+                        CircularProgressIndicator()
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
                     Button(
                         onClick = { launcher.launch() }
                     ) {
@@ -136,6 +139,7 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                                 viewModel.cancel()
                             } else {
                                 viewModel.onProcessClick()
+                                showStatusDialog.value = true
                             }
                         },
                         colors = if (isProcessing.value) {
@@ -150,49 +154,28 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                             Text(localizationState.getString("process"))
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                if (isProcessing.value) {
-                    Column {
-                        LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        LinearProgressIndicator(
-                            progress = progress.value,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                } else {
-                    Column {
-                        if (progress.value == 1F) {
-                            Snackbar(
-                                backgroundColor = MaterialTheme.colors.secondary,
-                                contentColor = MaterialTheme.colors.onSecondary
-                            ) {
-                                Text("finished!")
-                            }
-                        } else {
-                            LinearProgressIndicator(
-                                progress = 0F,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            LinearProgressIndicator(
-                                progress = progress.value,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                    Button(
+                        onClick = { showStatusDialog.value = true },
+                        enabled = isProcessing.value || processed.value > 0 || failed.value > 0
+                    ) {
+                        Text("Show Status")
                     }
                 }
             }
         }
+
+        ProcessStatusDialog(
+            localizationState = localizationState,
+            isVisible = showStatusDialog.value,
+            onDismiss = { showStatusDialog.value = false },
+            processed = processed.value,
+            failed = failed.value,
+            currentFile = currentFile.value,
+            progress = progress.value
+        )
     }
 }
 
@@ -382,4 +365,47 @@ fun Modifier.commonDragAndDrop(
         shouldStartDragAndDrop = { true },
         target = target
     )
+}
+
+@Composable
+fun ProcessStatusDialog(
+    localizationState: LocalizationState,
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    processed: Int,
+    failed: Int,
+    currentFile: String?,
+    progress: Float
+) {
+    if (isVisible) {
+        AlertDialog(
+            onDismissRequest = { onDismiss() },
+            title = {
+                Text(text = "Processing Status")
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "${localizationState.getString("success")}: $processed",
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = "${localizationState.getString("failed")}: $failed",
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = "${localizationState.getString("current_file")}: $currentFile",
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    LinearProgressIndicator(progress = progress)
+                }
+            },
+            confirmButton = {
+                Button(onClick = { onDismiss() }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
 }

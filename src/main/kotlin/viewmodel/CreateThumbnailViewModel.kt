@@ -84,19 +84,21 @@ class CreateThumbnailViewModel : ProcessViewModel(), KoinComponent {
 
     override fun onProcessClick() {
         process { basePath ->
-            val targets = Files.list(basePath)
-                .filter { file ->
-                    targetFormats.value.any {
-                        it.toExtension().any { extension ->
-                            file.extension.equals(extension, true)
+            val targets = Files.walk(basePath).use { stream ->
+                stream.filter { file ->
+                        targetFormats.value.any {
+                            it.toExtension().any { extension ->
+                                file.extension.equals(extension, true)
+                            }
                         }
-                    }
-                }.toList()
+                    }.toList()
+            }
 
             setTotal(targets.size)
 
             targets.forEach { file ->
                 yield()
+                updateCurrentFile(file)
                 val data = Files.readAllBytes(file)
                 val format = FormatDetector.detect(data).getOrNull()
 

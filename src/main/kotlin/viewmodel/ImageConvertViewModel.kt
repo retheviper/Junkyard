@@ -56,19 +56,18 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
 
     override fun onProcessClick() {
         process { basePath ->
-            val targets = Files.walk(basePath)
-                .filter { file ->
-                    fromFormat.value.toExtension().any {
-                        file.extension.equals(it, true)
-                    } || (_includeArchiveFiles.value && file.isArchiveFile)
-                }
-                .toList()
+            val targets = Files.walk(basePath).use { stream ->
+                stream.filter { Files.isRegularFile(it) }
+                    .filter { it != basePath }
+                    .toList()
+            }
 
             setTotal(targets.size)
 
             targets.forEach { file ->
                 yield()
                 processWithCount {
+                    updateCurrentFile(file)
                     if (_includeArchiveFiles.value && file.isArchiveFile) {
                         val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
                         runCatching { handleArchiveFile(file, tempPath) }
@@ -97,12 +96,13 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
             }
         }
 
-        Files.walk(tempPath)
-            .filter { Files.isRegularFile(it) }
-            .forEach { file ->
-                handleImageFile(file)
-                Files.deleteIfExists(file)
-            }
+        Files.walk(tempPath).use { stream ->
+            stream.filter { Files.isRegularFile(it) }
+                .forEach { file ->
+                    runCatching { handleImageFile(file) }
+                        .onSuccess { Files.deleteIfExists(file) }
+                }
+        }
 
         zipFiles(tempPath, zipFilePath)
     }

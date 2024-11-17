@@ -47,6 +47,9 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     private val _progress = MutableStateFlow(0F)
     val progress = _progress.asStateFlow()
 
+    private val _currentFile = MutableStateFlow("")
+    val currentFile = _currentFile.asStateFlow()
+
     fun setPath(path: Path) {
         _path.value = path
     }
@@ -60,6 +63,7 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     private fun stopProcessing() {
         _isProcessing.value = false
         _current.value = 0F
+        _currentFile.value = ""
     }
 
     protected fun incrementProcessed() {
@@ -80,6 +84,11 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     }
 
     abstract fun onProcessClick()
+
+    protected fun updateCurrentFile(file: Path) {
+        val fileName = file.fileName.toString()
+        _currentFile.value = fileName.takeIf { it.length <= 15 } ?: "${fileName.take(10)}...${fileName.takeLast(5)}"
+    }
 
     protected fun processWithCount(block: () -> Unit) {
         runCatching { block(); incrementCurrent() }
@@ -121,7 +130,6 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
         }
 
         return files?.firstOrNull { isTarget(it) }
-            ?.let { setPath(it.toPath()); true }
-            ?: false
+            ?.let { setPath(it.toPath()); true } == true
     }
 }

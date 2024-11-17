@@ -16,6 +16,8 @@ import viewmodel.CreateThumbnailViewModel
 import viewmodel.ImageConvertViewModel
 import viewmodel.RarToZipViewModel
 import viewmodel.ResyncSubtitleViewModel
+import viewmodel.VideoConvertViewModel
+import kotlin.math.sin
 
 private val viewModelModules = module {
     single { ArchiveViewModel() }
@@ -24,6 +26,7 @@ private val viewModelModules = module {
     single { RarToZipViewModel() }
     single { CreateThumbnailViewModel() }
     single { ResyncSubtitleViewModel() }
+    single { VideoConvertViewModel() }
 }
 
 private val imageModules = module {

@@ -14,15 +14,17 @@ class RarToZipViewModel : ProcessViewModel() {
 
     override fun onProcessClick() {
         process { basePath ->
-            val targets = Files.walk(basePath)
-                .filter { Files.isRegularFile(it) && it != basePath }
-                .filter { it.extension.equals(rarExtension, ignoreCase = true) }
-                .toList()
+            val targets = Files.walk(basePath).use { stream ->
+                stream.filter { Files.isRegularFile(it) && it != basePath }
+                    .filter { it.extension.equals(rarExtension, ignoreCase = true) }
+                    .toList()
+            }
 
             setTotal(targets.size)
 
             targets.forEach {
                 yield()
+                updateCurrentFile(it)
                 convert(it)
             }
         }
@@ -49,8 +51,9 @@ class RarToZipViewModel : ProcessViewModel() {
 
 internal fun zipFiles(unarchivedFolder: Path, zipFilePath: Path) {
     ZipOutputStream(Files.newOutputStream(zipFilePath)).use { zipOutputStream ->
-        Files.walk(unarchivedFolder)
-            .filter { Files.isRegularFile(it) }
-            .forEach { zipOutputStream.addZipEntry(it, unarchivedFolder.relativize(it)) }
+        Files.walk(unarchivedFolder).use { stream ->
+            stream.filter { Files.isRegularFile(it) }
+                .forEach { zipOutputStream.addZipEntry(it, unarchivedFolder.relativize(it)) }
+        }
     }
 }

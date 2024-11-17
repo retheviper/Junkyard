@@ -7,17 +7,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.NavigationRail
 import androidx.compose.material.NavigationRailItem
 import androidx.compose.material.Surface
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.isMetaPressed
@@ -36,8 +41,6 @@ import framework.MyTheme
 import framework.OS
 import framework.appModules
 import framework.rememberLocalizationState
-import java.awt.Dimension
-import java.util.Locale
 import org.koin.compose.koinInject
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
@@ -47,6 +50,16 @@ import ui.CreateThumbnailView
 import ui.ImageConvertView
 import ui.RarToZipView
 import ui.ResyncSubtitleView
+import ui.VideoConvertView
+import viewmodel.ArchiveViewModel
+import viewmodel.ChangeExtensionViewModel
+import viewmodel.CreateThumbnailViewModel
+import viewmodel.ImageConvertViewModel
+import viewmodel.RarToZipViewModel
+import viewmodel.ResyncSubtitleViewModel
+import viewmodel.VideoConvertViewModel
+import java.awt.Dimension
+import java.util.Locale
 
 enum class Screen(val title: String, val icon: String) {
     Archive("Archive", "📦"),
@@ -54,7 +67,8 @@ enum class Screen(val title: String, val icon: String) {
     ChangeExtension("Extension", "🔄"),
     ImageConvert("Convert", "🖼️"),
     CreateThumbnail("Thumbnail", "📐"),
-    ResyncSubtitle("Resync", "📽️")
+    ResyncSubtitle("Resync", "📽️"),
+    VideoConvert("Convert", "🎥")
 }
 
 @Composable
@@ -71,8 +85,35 @@ fun MainScreen() {
             NavigationRail {
                 Column {
                     Screen.entries.forEach {
+                        val viewModel = when (it) {
+                            Screen.Archive -> koinInject<ArchiveViewModel>()
+                            Screen.RarToZip -> koinInject<RarToZipViewModel>()
+                            Screen.ChangeExtension -> koinInject<ChangeExtensionViewModel>()
+                            Screen.ImageConvert -> koinInject<ImageConvertViewModel>()
+                            Screen.CreateThumbnail -> koinInject<CreateThumbnailViewModel>()
+                            Screen.ResyncSubtitle -> koinInject<ResyncSubtitleViewModel>()
+                            Screen.VideoConvert -> koinInject<VideoConvertViewModel>()
+                        }
+
+                        val progress by viewModel.progress.collectAsState()
+
                         NavigationRailItem(
-                            label = { Text(it.title) },
+                            label = {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(it.title)
+                                    if (progress > 0F && progress < 1F) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        LinearProgressIndicator(
+                                            progress = progress,
+                                            modifier = Modifier
+                                                .fillMaxWidth(0.6f)
+                                                .height(4.dp)
+                                        )
+                                    }
+                                }
+                            },
                             icon = { Text(it.icon) },
                             onClick = { navController.navigate(it.name) },
                             selected = navBackStackEntry?.destination?.route == it.name
@@ -109,6 +150,7 @@ fun MainScreen() {
                     composable(Screen.ImageConvert.name) { ImageConvertView() }
                     composable(Screen.CreateThumbnail.name) { CreateThumbnailView() }
                     composable(Screen.ResyncSubtitle.name) { ResyncSubtitleView() }
+                    composable(Screen.VideoConvert.name) { VideoConvertView() }
                 }
             }
         }
