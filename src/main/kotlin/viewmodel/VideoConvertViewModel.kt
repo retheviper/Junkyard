@@ -11,8 +11,15 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 
-enum class VideoFormat {
-    AVI, M4V, TS, WEBM, WMV, MOV, MPG
+enum class VideoFormat(val extensions: List<String>) {
+    ALL(listOf("mp4", "avi", "m4v", "ts", "webm", "wmv", "mov", "mpg", "mpeg")),
+    AVI(listOf("avi")),
+    M4V(listOf("m4v")),
+    TS(listOf("ts")),
+    WEBM(listOf("webm")),
+    WMV(listOf("wmv")),
+    MOV(listOf("mov")),
+    MPG(listOf("mpg", "mpeg"))
 }
 
 enum class VideoCodec {
@@ -22,7 +29,7 @@ enum class VideoCodec {
 class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
 
-    private val _targetFormat = MutableStateFlow(VideoFormat.AVI)
+    private val _targetFormat = MutableStateFlow(VideoFormat.ALL)
     val targetFormat = _targetFormat.asStateFlow()
 
     private val _videoCodec = MutableStateFlow(VideoCodec.H264)
@@ -47,7 +54,9 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
         process { basePath ->
             val targets = Files.walk(basePath).use { stream ->
                 stream.filter { file -> Files.isRegularFile(file) }
-                    .filter { file -> file.extension.equals(targetFormat.value.name, true) }
+                    .filter { file ->
+                        targetFormat.value.extensions.any { it.equals(file.extension, ignoreCase = true) }
+                    }
                     .toList()
             }
 

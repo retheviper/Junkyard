@@ -173,7 +173,7 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             onDismiss = { showStatusDialog.value = false },
             processed = processed.value,
             failed = failed.value,
-            currentFile = currentFile.value,
+            currentFile = currentFile.value.takeIf { it.isNotEmpty() },
             progress = progress.value
         )
     }
@@ -393,10 +393,13 @@ fun ProcessStatusDialog(
                         text = "${localizationState.getString("failed")}: $failed",
                         fontSize = 16.sp
                     )
-                    Text(
-                        text = "${localizationState.getString("current_file")}: $currentFile",
-                        fontSize = 16.sp
-                    )
+                    currentFile?.let {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "${localizationState.getString("current_file")}: $currentFile",
+                            fontSize = 16.sp
+                        )
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                     LinearProgressIndicator(progress = progress)
                 }
