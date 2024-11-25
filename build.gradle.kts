@@ -41,10 +41,14 @@ tasks {
             else -> throw IllegalStateException("Unsupported OS")
         }
 
-        val ffmpegTarget = layout.projectDirectory.dir("src/main/resources/binaries/ffmpeg/${os.familyName}")
+        val ffmpegTarget = layout.projectDirectory.dir("src/main/resources/binaries/ffmpeg/${if (os.isMacOsX) "macos" else os.name.lowercase()}")
 
         from(ffmpegSource)
         into(ffmpegTarget)
+
+        onlyIf {
+            gradle.startParameter.taskNames.none { it == "run" }
+        }
     }
 
     named("processResources") {
