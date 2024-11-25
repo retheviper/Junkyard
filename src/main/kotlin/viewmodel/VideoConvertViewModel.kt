@@ -5,15 +5,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.yield
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import service.BinaryBundleService
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Base64.getEncoder
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 
 enum class VideoFormat(val extensions: List<String>) {
-    ALL(listOf("mp4", "avi", "m4v", "ts", "webm", "wmv", "mov", "mpg", "mpeg")),
+    ALL(listOf("avi", "m4v", "ts", "webm", "wmv", "mov", "mpg", "mpeg")),
     AVI(listOf("avi")),
     M4V(listOf("m4v")),
     TS(listOf("ts")),
@@ -50,6 +51,7 @@ enum class VideoCodec(
 }
 
 class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
+    private val binaryBundleService: BinaryBundleService by inject()
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
 
     private val _targetFormat = MutableStateFlow(VideoFormat.ALL)
@@ -71,6 +73,17 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
 
     fun toggleUseHardwareEncoder() {
         _useHardwareEncoder.value = !_useHardwareEncoder.value
+    }
+
+    private val ffmpegPath: String by lazy {
+        val ffmpegDir = when (OS.current) {
+            OS.WINDOWS -> "windows"
+            OS.MAC -> "macos"
+            OS.LINUX -> "linux"
+            OS.OTHER -> throw IllegalStateException("Unsupported OS")
+        }
+
+        binaryBundleService.getBinaryBundle("/binaries/ffmpeg/$ffmpegDir/ffmpeg").absolutePathString()
     }
 
     override fun onProcessClick() {
@@ -104,7 +117,7 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
             filePath.resolveSibling("${filePath.nameWithoutExtension}.mp4")
 
         val process = ProcessBuilder(
-            "ffmpeg",
+            ffmpegPath,
             "-i", filePath.absolutePathString(),
             "-c:v", encoder,
             "-c:a", "aac",

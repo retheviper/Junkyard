@@ -1,3 +1,4 @@
+import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -28,6 +29,27 @@ dependencies {
     implementation(libs.scrimage.core)
     implementation(libs.scrimage.webp)
     implementation(libs.slf4j.simple)
+}
+
+tasks {
+    register<Copy>("bundleFfmpeg") {
+        val os = OperatingSystem.current()
+        val ffmpegSource = when {
+            os.isLinux -> "src/main/resources/binaries/ffmpeg/linux/ffmpeg"
+            os.isMacOsX -> "src/main/resources/binaries/ffmpeg/macos/ffmpeg"
+            os.isWindows -> "src/main/resources/binaries/ffmpeg/windows/ffmpeg.exe"
+            else -> throw IllegalStateException("Unsupported OS")
+        }
+
+        val ffmpegTarget = layout.projectDirectory.dir("src/main/resources/binaries/ffmpeg/${os.familyName}")
+
+        from(ffmpegSource)
+        into(ffmpegTarget)
+    }
+
+    named("processResources") {
+        dependsOn("bundleFfmpeg")
+    }
 }
 
 compose.desktop {

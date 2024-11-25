@@ -33,7 +33,6 @@ fun VideoConvertView() {
     val videoCodec = viewModel.videoCodec.collectAsState()
     var targetFormatExpanded by remember { mutableStateOf(false) }
     var videoCodecExpanded by remember { mutableStateOf(false) }
-    var selectableFormats by remember { mutableStateOf(VideoFormat.entries.filterNot { format -> format == targetFormat.value }) }
     var selectableCodecs by remember { mutableStateOf(VideoCodec.entries) }
     val isDragOver = remember { mutableStateOf(false) }
 
@@ -65,10 +64,6 @@ fun VideoConvertView() {
                 items = VideoFormat.entries,
                 onItemSelected = {
                     viewModel.setTargetFormat(it)
-                    selectableFormats = VideoFormat.entries.filterNot { format -> format == it }
-                    if (targetFormat.value == it) {
-                        viewModel.setTargetFormat(selectableFormats.first())
-                    }
                 },
                 expanded = targetFormatExpanded,
                 onExpandedChange = { targetFormatExpanded = it }
