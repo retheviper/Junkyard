@@ -38,7 +38,11 @@ enum class ImageFromFormat(val format: Format?) {
 }
 
 class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
-    override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
+    override val targetPickerType: TargetPickerType = TargetPickerType.BOTH
+    override val targetExtensions: List<String> = buildList {
+        addAll(Format.entries.flatMap { it.toExtension() })
+        addAll(ArchiveFormat.entries.map { it.name.lowercase() })
+    }
     private val webpImageReader by inject<WebpImageReader>()
     private val imageIOReader by inject<ImageIOReader>()
     private val gif2WebpWriter by inject<Gif2WebpWriter>()
@@ -66,34 +70,58 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
 
     override fun onProcessClick() {
         process { basePath ->
-            val targets = Files.walk(basePath).use { stream ->
-                stream.filter { Files.isRegularFile(it) }
-                    .filter { it != basePath }
-                    .toList()
-            }
+            val targets = collectTargets(basePath)
 
             setTotal(targets.size)
 
             targets.forEach { file ->
                 yield()
-                processWithCount {
-                    updateCurrentFile(file)
-                    if (_includeArchiveFiles.value && file.isArchiveFile) {
-                        val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
-                        runCatching { handleArchiveFile(file, tempPath) }
-                            .exceptionOrNull()
-                            .also { tempPath.toFile().deleteRecursively() }
-                    } else {
-                        if (handleImageFile(file)) {
-                            Files.deleteIfExists(file)
+                updateCurrentFile(file)
+                if (_includeArchiveFiles.value && file.isArchiveFile) {
+                    val tempPath = Files.createTempDirectory(UUID.randomUUID().toString())
+                    runCatching { handleArchiveFile(file, tempPath) }
+                        .onSuccess { convertedCount ->
+                            if (convertedCount > 0) {
+                                incrementProcessed()
+                            }
                         }
-                    }
+                        .onFailure {
+                            incrementFailed()
+                            it.printStackTrace()
+                        }
+                        .also { tempPath.toFile().deleteRecursively() }
+                } else {
+                    runCatching { handleImageFile(file) }
+                        .onSuccess { converted ->
+                            if (converted) {
+                                Files.deleteIfExists(file)
+                                incrementProcessed()
+                            }
+                        }
+                        .onFailure {
+                            incrementFailed()
+                            it.printStackTrace()
+                        }
                 }
+                incrementCurrent()
             }
         }
     }
 
-    private fun handleArchiveFile(zipFilePath: Path, tempPath: Path) {
+    private fun collectTargets(basePath: Path): List<Path> {
+        return if (Files.isRegularFile(basePath)) {
+            listOf(basePath)
+        } else {
+            Files.walk(basePath).use { stream ->
+                stream.filter { Files.isRegularFile(it) }
+                    .filter { it != basePath }
+                    .toList()
+            }
+        }
+    }
+
+    private fun handleArchiveFile(zipFilePath: Path, tempPath: Path): Int {
+        var convertedCount = 0
         ZipInputStream(Files.newInputStream(zipFilePath)).use { zipInputStream ->
             var entry = zipInputStream.nextEntry
             while (entry != null) {
@@ -114,12 +142,18 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
                         .onSuccess { converted ->
                             if (converted) {
                                 Files.deleteIfExists(file)
+                                convertedCount++
                             }
+                        }
+                        .onFailure {
+                            incrementFailed()
+                            it.printStackTrace()
                         }
                 }
         }
 
         zipFiles(tempPath, zipFilePath)
+        return convertedCount
     }
 
     private fun handleImageFile(filePath: Path): Boolean {

@@ -22,7 +22,6 @@ import framework.LocalizationState
 import org.koin.compose.koinInject
 import viewmodel.ImageFromFormat
 import viewmodel.ImageConvertViewModel
-import viewmodel.TargetPickerType
 
 @Composable
 fun ImageConvertView() {
@@ -43,7 +42,7 @@ fun ImageConvertView() {
             .padding(16.dp)
             .commonDragAndDrop(
                 isDragOver = isDragOver,
-                onDrop = { viewModel.handleDrop(it, TargetPickerType.DIRECTORY) }
+                onDrop = { viewModel.handleDrop(it, viewModel.targetPickerType) }
             )
             .background(if (isDragOver.value) Color.LightGray else Color.Transparent)
     ) {
