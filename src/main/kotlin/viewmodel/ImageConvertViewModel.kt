@@ -27,13 +27,23 @@ enum class ArchiveFormat {
     ZIP, CBZ
 }
 
+enum class ImageFromFormat(val format: Format?) {
+    ALL(null),
+    JPEG(Format.JPEG),
+    PNG(Format.PNG),
+    GIF(Format.GIF),
+    WEBP(Format.WEBP);
+
+    fun matches(target: Format): Boolean = format == null || format == target
+}
+
 class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
     override val targetPickerType: TargetPickerType = TargetPickerType.DIRECTORY
     private val webpImageReader by inject<WebpImageReader>()
     private val imageIOReader by inject<ImageIOReader>()
     private val gif2WebpWriter by inject<Gif2WebpWriter>()
 
-    private val _fromFormat = MutableStateFlow(Format.JPEG)
+    private val _fromFormat = MutableStateFlow(ImageFromFormat.ALL)
     val fromFormat = _fromFormat.asStateFlow()
 
     private val _toFormat = MutableStateFlow(Format.WEBP)
@@ -42,7 +52,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
     private val _includeArchiveFiles = MutableStateFlow(false)
     val includeArchiveFiles = _includeArchiveFiles.asStateFlow()
 
-    fun setFromFormat(format: Format) {
+    fun setFromFormat(format: ImageFromFormat) {
         _fromFormat.value = format
     }
 
@@ -116,7 +126,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
         val data = Files.readAllBytes(filePath)
         val format = FormatDetector.detect(data).getOrElse { return false }
 
-        if (fromFormat.value != format) {
+        if (!fromFormat.value.matches(format) || format == toFormat.value) {
             return false
         }
 
@@ -124,7 +134,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
             "${filePath.nameWithoutExtension}.${toFormat.value.toExtension().first()}"
         )
 
-        convertImage(convertedFilePath, data, fromFormat.value, toFormat.value)
+        convertImage(convertedFilePath, data, format, toFormat.value)
         return true
     }
 

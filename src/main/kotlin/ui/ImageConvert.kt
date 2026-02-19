@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.sksamuel.scrimage.format.Format
 import framework.LocalizationState
 import org.koin.compose.koinInject
+import viewmodel.ImageFromFormat
 import viewmodel.ImageConvertViewModel
 import viewmodel.TargetPickerType
 
@@ -31,7 +32,9 @@ fun ImageConvertView() {
     val toFormat = viewModel.toFormat.collectAsState()
     var fromFormatExpanded by remember { mutableStateOf(false) }
     var toFormatExpanded by remember { mutableStateOf(false) }
-    var selectableFormats by remember { mutableStateOf(Format.entries.filterNot { format -> format == fromFormat.value }) }
+    var selectableFormats by remember {
+        mutableStateOf(Format.entries.filterNot { format -> format == fromFormat.value.format })
+    }
     val isDragOver = remember { mutableStateOf(false) }
 
     Column(
@@ -59,11 +62,11 @@ fun ImageConvertView() {
             DropdownMenuBox(
                 label = "${localizationState.getString("from_format")}:",
                 selectedItem = fromFormat.value,
-                items = Format.entries,
+                items = ImageFromFormat.entries,
                 onItemSelected = {
                     viewModel.setFromFormat(it)
-                    selectableFormats = Format.entries.filterNot { format -> format == it }
-                    if (toFormat.value == it) {
+                    selectableFormats = Format.entries.filterNot { format -> format == it.format }
+                    if (it.format != null && toFormat.value == it.format) {
                         viewModel.setToFormat(selectableFormats.first())
                     }
                 },
