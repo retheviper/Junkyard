@@ -74,8 +74,9 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
                             .exceptionOrNull()
                             .also { tempPath.toFile().deleteRecursively() }
                     } else {
-                        handleImageFile(file)
-                        Files.deleteIfExists(file)
+                        if (handleImageFile(file)) {
+                            Files.deleteIfExists(file)
+                        }
                     }
                 }
             }
@@ -100,19 +101,23 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
             stream.filter { Files.isRegularFile(it) }
                 .forEach { file ->
                     runCatching { handleImageFile(file) }
-                        .onSuccess { Files.deleteIfExists(file) }
+                        .onSuccess { converted ->
+                            if (converted) {
+                                Files.deleteIfExists(file)
+                            }
+                        }
                 }
         }
 
         zipFiles(tempPath, zipFilePath)
     }
 
-    private fun handleImageFile(filePath: Path) {
+    private fun handleImageFile(filePath: Path): Boolean {
         val data = Files.readAllBytes(filePath)
-        val format = FormatDetector.detect(data).getOrElse { return }
+        val format = FormatDetector.detect(data).getOrElse { return false }
 
         if (fromFormat.value != format) {
-            return
+            return false
         }
 
         val convertedFilePath = filePath.resolveSibling(
@@ -120,6 +125,7 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
         )
 
         convertImage(convertedFilePath, data, fromFormat.value, toFormat.value)
+        return true
     }
 
     private fun convertImage(filePath: Path, data: ByteArray, fromFormat: Format, toFormat: Format) {
