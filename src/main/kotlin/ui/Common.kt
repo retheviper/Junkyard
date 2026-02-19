@@ -75,23 +75,21 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
     val currentFile = viewModel.currentFile.collectAsState()
     val showStatusDialog = remember { mutableStateOf(false) }
 
-    val launcher = when (viewModel.targetPickerType) {
-        TargetPickerType.DIRECTORY -> rememberDirectoryPickerLauncher(
-            title = localizationState.getString("select_directory"),
-            initialDirectory = null,
-            platformSettings = null
-        ) { directory ->
-            directory?.let { viewModel.setPath(it.file.toPath()) }
-        }
+    val directoryLauncher = rememberDirectoryPickerLauncher(
+        title = localizationState.getString("select_directory"),
+        initialDirectory = null,
+        platformSettings = null
+    ) { directory ->
+        directory?.let { viewModel.setPath(it.file.toPath()) }
+    }
 
-        TargetPickerType.FILE -> rememberFilePickerLauncher(
-            title = localizationState.getString("select_file"),
-            type = PickerType.File(extensions = viewModel.targetExtensions),
-            initialDirectory = null,
-            platformSettings = null
-        ) { file ->
-            file?.let { viewModel.setPath(it.file.toPath()) }
-        }
+    val fileLauncher = rememberFilePickerLauncher(
+        title = localizationState.getString("select_file"),
+        type = PickerType.File(extensions = viewModel.targetExtensions),
+        initialDirectory = null,
+        platformSettings = null
+    ) { file ->
+        file?.let { viewModel.setPath(it.file.toPath()) }
     }
 
     Column(
@@ -119,15 +117,28 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    Button(
-                        onClick = { launcher.launch() }
-                    ) {
-                        Text(
-                            when (viewModel.targetPickerType) {
-                                TargetPickerType.DIRECTORY -> localizationState.getString("select_directory")
-                                TargetPickerType.FILE -> localizationState.getString("select_file")
+                    when (viewModel.targetPickerType) {
+                        TargetPickerType.DIRECTORY -> {
+                            Button(onClick = { directoryLauncher.launch() }) {
+                                Text(localizationState.getString("select_directory"))
                             }
-                        )
+                        }
+
+                        TargetPickerType.FILE -> {
+                            Button(onClick = { fileLauncher.launch() }) {
+                                Text(localizationState.getString("select_file"))
+                            }
+                        }
+
+                        TargetPickerType.BOTH -> {
+                            Button(onClick = { directoryLauncher.launch() }) {
+                                Text(localizationState.getString("select_directory"))
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(onClick = { fileLauncher.launch() }) {
+                                Text(localizationState.getString("select_file"))
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))

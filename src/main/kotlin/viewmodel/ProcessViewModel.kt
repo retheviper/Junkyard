@@ -21,7 +21,8 @@ import kotlin.coroutines.resume
 
 enum class TargetPickerType {
     DIRECTORY,
-    FILE
+    FILE,
+    BOTH
 }
 
 abstract class ProcessViewModel : ViewModel(), KoinComponent {
@@ -124,9 +125,13 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
                     .takeIf { transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor) }
             }?.filterIsInstance<File>()
 
+        val isTargetFile: (File) -> Boolean = { file ->
+            file.isFile && (targetExtensions.isEmpty() || targetExtensions.any { file.extension.equals(it, true) })
+        }
         val isTarget = when (target) {
             TargetPickerType.DIRECTORY -> File::isDirectory
-            TargetPickerType.FILE -> { file -> file.isFile && targetExtensions.any { file.extension.equals(it, true) } }
+            TargetPickerType.FILE -> isTargetFile
+            TargetPickerType.BOTH -> { file -> file.isDirectory || isTargetFile(file) }
         }
 
         return files?.firstOrNull { isTarget(it) }
