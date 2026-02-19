@@ -2,8 +2,6 @@ package service
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import org.koin.core.component.KoinComponent
@@ -63,7 +61,6 @@ class SrtResyncSubtitleServiceStrategy : ResyncSubtitleServiceStrategy() {
     private val srtPattern = """
         (\d+)\s+(\d{2}:\d{2}:\d{2},\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2},\d{3})\s+([\s\S]*?)\s*(?=\d+\s+\d{2}|\Z)
         """.trimIndent().toRegex()
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss,SSS")
 
     override fun shiftSubtitle(file: Path, shiftMillis: Int) {
         val content = Files.readString(file)
@@ -73,19 +70,31 @@ class SrtResyncSubtitleServiceStrategy : ResyncSubtitleServiceStrategy() {
             val endTime = matchResult.groupValues[3]
             val subtitle = matchResult.groupValues[4]
 
-            val newStartTime = shiftTime(startTime, shiftMillis, timeFormatter)
-            val newEndTime = shiftTime(endTime, shiftMillis, timeFormatter)
+            val newStartTime = shiftTime(startTime, shiftMillis)
+            val newEndTime = shiftTime(endTime, shiftMillis)
 
-            "$number\n$newStartTime --> $newEndTime\n$subtitle\n"
+            "$number\n$newStartTime --> $newEndTime\n$subtitle\n\n"
         }
 
         Files.writeString(toOutputPath(file), shiftedContent)
     }
 
-    private fun shiftTime(time: String, shiftMs: Int, formatter: DateTimeFormatter): String {
-        val localTime = LocalTime.parse(time, formatter)
-        val shiftedTime = localTime.plusNanos(shiftMs * 1_000_000L)
-        return shiftedTime.format(formatter)
+    private fun shiftTime(time: String, shiftMs: Int): String {
+        val hours = time.substring(0, 2).toLong()
+        val minutes = time.substring(3, 5).toLong()
+        val seconds = time.substring(6, 8).toLong()
+        val milliseconds = time.substring(9, 12).toLong()
+
+        val originalMillis = (((hours * 60 + minutes) * 60) + seconds) * 1_000 + milliseconds
+        val shiftedMillis = (originalMillis + shiftMs).coerceAtLeast(0L)
+
+        val newHours = shiftedMillis / 3_600_000
+        val remainderAfterHours = shiftedMillis % 3_600_000
+        val newMinutes = remainderAfterHours / 60_000
+        val remainderAfterMinutes = remainderAfterHours % 60_000
+        val newSeconds = remainderAfterMinutes / 1_000
+        val newMillis = remainderAfterMinutes % 1_000
+
+        return String.format("%02d:%02d:%02d,%03d", newHours, newMinutes, newSeconds, newMillis)
     }
 }
-

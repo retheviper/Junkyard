@@ -118,11 +118,15 @@ class VideoConvertViewModel : ProcessViewModel(), KoinComponent {
 
         val process = ProcessBuilder(
             ffmpegPath,
+            "-y",
             "-i", filePath.absolutePathString(),
             "-c:v", encoder,
             "-c:a", "aac",
             targetPath.absolutePathString()
-        ).start()
+        ).apply {
+            environment()["PATH"] = System.getenv("PATH")
+            environment()["DYLD_LIBRARY_PATH"] = System.getenv("DYLD_LIBRARY_PATH")
+        }.start()
 
         val exitCode = process.waitFor()
 
