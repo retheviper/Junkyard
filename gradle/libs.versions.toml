@@ -1,14 +1,14 @@
 [versions]
-androidx-lifecycle = "2.8.3"
-androidx-navigation = "2.8.0-alpha10"
-compose-plugin = "1.7.0"
-kotlin = "2.0.21"
-kotlinx-coroutines-swing = "1.9.0"
-koin = "4.0.0"
-filekit = "0.8.7"
-junrar = "7.5.5"
-scrimage = "4.2.0"
-slf4j = "2.0.13"
+androidx-lifecycle = "2.9.6"
+androidx-navigation = "2.9.2"
+compose-plugin = "1.10.2"
+kotlin = "2.3.10"
+kotlinx-coroutines-swing = "1.10.2"
+koin = "4.1.1"
+filekit = "0.8.8"
+junrar = "7.5.8"
+scrimage = "4.3.8"
+slf4j = "2.0.17"
 
 [libraries]
 androidx-lifecycle-viewmodel-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }

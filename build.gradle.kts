@@ -18,6 +18,7 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+    implementation("org.jetbrains.compose.material:material-icons-extended-desktop:1.7.3")
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose.desktop)
     implementation(libs.kotlinx.coroutines.swing)
