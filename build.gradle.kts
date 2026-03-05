@@ -58,7 +58,7 @@ tasks {
 
 compose.desktop {
     application {
-        mainClass = "MainKt"
+        mainClass = "presentation.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

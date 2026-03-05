@@ -1,0 +1,157 @@
+package presentation.ui.component
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Checkbox
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Text
+import androidx.compose.material.TextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun <T : Enum<T>> DropdownMenuBox(
+    label: String,
+    selectedItem: T,
+    items: List<T>,
+    onItemSelected: (T) -> Unit,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text(label)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(
+            contentAlignment = Alignment.CenterStart,
+            modifier = Modifier
+                .size(250.dp, 50.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .border(BorderStroke(1.dp, Color.LightGray), RoundedCornerShape(4.dp))
+                .clickable { onExpandedChange(!expanded) }
+        ) {
+            Text(
+                text = selectedItem.name,
+                modifier = Modifier.padding(start = 10.dp)
+            )
+            Icon(
+                Icons.Filled.ArrowDropDown,
+                "contentDescription",
+                Modifier.align(Alignment.CenterEnd)
+            )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { onExpandedChange(false) }
+            ) {
+                items.forEach {
+                    DropdownMenuItem(
+                        onClick = {
+                            onItemSelected(it)
+                            onExpandedChange(false)
+                        }
+                    ) {
+                        Text(it.name)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CheckboxSection(
+    onClick: () -> Unit,
+    checked: Boolean,
+    text: String
+) {
+    Row(
+        modifier = Modifier
+            .clickable { onClick() },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = { onClick() }
+        )
+        Text(text)
+    }
+}
+
+@Composable
+fun LabeledTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text(label)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(fontSize = 16.sp),
+            shape = RectangleShape,
+            modifier = Modifier.size(250.dp, 50.dp)
+        )
+    }
+}
+
+@Composable
+fun NumberInputField(
+    number: Int,
+    onNumberChange: (String) -> Unit,
+    onIncrease: () -> Unit,
+    onDecrease: () -> Unit
+) {
+    OutlinedTextField(
+        value = number.toString(),
+        onValueChange = onNumberChange,
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        trailingIcon = {
+            Column {
+                IconButton(onClick = onIncrease, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Increase")
+                }
+                IconButton(onClick = onDecrease, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Decrease")
+                }
+            }
+        },
+        modifier = Modifier.padding(16.dp)
+    )
+}
