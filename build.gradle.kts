@@ -42,7 +42,7 @@ tasks {
             else -> throw IllegalStateException("Unsupported OS")
         }
 
-        val ffmpegTarget = layout.projectDirectory.dir("src/main/resources/binaries/ffmpeg/${if (os.isMacOsX) "macos" else os.name.lowercase()}")
+        val ffmpegTarget = layout.buildDirectory.dir("bundleFfmpeg/${if (os.isMacOsX) "macos" else os.name.lowercase()}")
 
         from(ffmpegSource)
         into(ffmpegTarget)
