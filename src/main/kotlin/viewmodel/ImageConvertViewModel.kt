@@ -56,6 +56,19 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
     private val _includeArchiveFiles = MutableStateFlow(false)
     val includeArchiveFiles = _includeArchiveFiles.asStateFlow()
 
+    private val imageExtensions = Format.entries
+        .flatMap { it.toExtension() }
+        .map { it.lowercase() }
+        .toSet()
+
+    private val archiveExtensions = ArchiveFormat.entries
+        .map { it.name.lowercase() }
+        .toSet()
+
+    private val extensionsByFormat = Format.entries.associateWith { format ->
+        format.toExtension().map { it.lowercase() }.toSet()
+    }
+
     fun setFromFormat(format: ImageFromFormat) {
         _fromFormat.value = format
     }
@@ -110,11 +123,12 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
 
     private fun collectTargets(basePath: Path): List<Path> {
         return if (Files.isRegularFile(basePath)) {
-            listOf(basePath)
+            listOf(basePath).filter { isSupportedTarget(it) }
         } else {
             Files.walk(basePath).use { stream ->
                 stream.filter { Files.isRegularFile(it) }
                     .filter { it != basePath }
+                    .filter { isSupportedTarget(it) }
                     .toList()
             }
         }
@@ -157,6 +171,16 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
     }
 
     private fun handleImageFile(filePath: Path): Boolean {
+        val extension = filePath.extension.lowercase()
+        if (extension !in imageExtensions) {
+            return false
+        }
+
+        val selectedFromFormat = fromFormat.value.format
+        if (selectedFromFormat != null && extension !in extensionsByFormat.getValue(selectedFromFormat)) {
+            return false
+        }
+
         val data = Files.readAllBytes(filePath)
         val format = FormatDetector.detect(data).getOrElse { return false }
 
@@ -204,5 +228,14 @@ class ImageConvertViewModel : ProcessViewModel(), KoinComponent {
     }
 
     private val Path.isArchiveFile: Boolean
-        get() = ArchiveFormat.entries.any { extension.equals(it.name, true) }
+        get() = extension.lowercase() in archiveExtensions
+
+    private fun isSupportedTarget(path: Path): Boolean {
+        val extension = path.extension.lowercase()
+        return when {
+            extension in imageExtensions -> true
+            extension in archiveExtensions -> includeArchiveFiles.value
+            else -> false
+        }
+    }
 }
