@@ -6,6 +6,8 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.nio.file.Path
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +55,9 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     private val _currentFile = MutableStateFlow("")
     val currentFile = _currentFile.asStateFlow()
 
+    private val _logs = MutableStateFlow<List<String>>(emptyList())
+    val logs = _logs.asStateFlow()
+
     fun setPath(path: Path) {
         _path.value = path
     }
@@ -61,6 +66,7 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
         _isProcessing.value = true
         _processed.value = 0
         _failed.value = 0
+        _logs.value = emptyList()
     }
 
     private fun stopProcessing() {
@@ -94,7 +100,7 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
             incrementCurrentFn = ::incrementCurrent,
             incrementProcessedFn = ::incrementProcessed,
             incrementFailedFn = ::incrementFailed,
-            printErrorFn = Throwable::printStackTrace,
+            printErrorFn = ::recordError,
             yieldFn = { yield() }
         )
     }
@@ -104,6 +110,18 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     protected fun updateCurrentFile(file: Path) {
         val fileName = file.fileName.toString()
         _currentFile.value = fileName.takeIf { it.length <= 15 } ?: "${fileName.take(10)}...${fileName.takeLast(5)}"
+    }
+
+    protected fun recordLog(message: String) {
+        _logs.value += message
+    }
+
+    private fun recordError(error: Throwable) {
+        val stackTrace = StringWriter().also { writer ->
+            error.printStackTrace(PrintWriter(writer))
+        }.toString().trim()
+        recordLog(stackTrace)
+        error.printStackTrace()
     }
 
     protected fun processWithCount(block: () -> Unit) {
@@ -118,7 +136,18 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
         val job = viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 startProcessing()
+                recordLog("Started: $basePath")
                 runCatching { block(basePath) }
+                    .onSuccess {
+                        recordLog("Completed. Success: ${processed.value}, Failed: ${failed.value}")
+                    }
+                    .onFailure {
+                        if (!isActive) {
+                            recordLog("Canceled.")
+                        } else {
+                            recordError(it)
+                        }
+                    }
                     .also { stopProcessing() }
             }
         }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,6 +16,8 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -25,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerType
@@ -32,6 +37,8 @@ import org.koin.compose.koinInject
 import presentation.i18n.LocalizationState
 import presentation.viewmodel.ProcessViewModel
 import presentation.viewmodel.TargetPickerType
+import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.rememberDialogState
 
 @Composable
 fun ProcessesSection(viewModel: ProcessViewModel) {
@@ -42,7 +49,9 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
     val failed = viewModel.failed.collectAsState()
     val progress = viewModel.progress.collectAsState()
     val currentFile = viewModel.currentFile.collectAsState()
+    val logs = viewModel.logs.collectAsState()
     val showStatusDialog = remember { mutableStateOf(false) }
+    val showLogsDialog = remember { mutableStateOf(false) }
 
     val directoryLauncher = rememberDirectoryPickerLauncher(
         title = localizationState.getString("select_directory"),
@@ -154,7 +163,16 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
             processed = processed.value,
             failed = failed.value,
             currentFile = currentFile.value.takeIf { it.isNotEmpty() },
-            progress = progress.value
+            progress = progress.value,
+            hasLogs = logs.value.isNotEmpty(),
+            onShowLogs = { showLogsDialog.value = true }
+        )
+
+        LogsDialog(
+            localizationState = localizationState,
+            isVisible = showLogsDialog.value,
+            onDismiss = { showLogsDialog.value = false },
+            logs = logs.value
         )
     }
 }
@@ -167,13 +185,15 @@ fun ProcessStatusDialog(
     processed: Int,
     failed: Int,
     currentFile: String?,
-    progress: Float
+    progress: Float,
+    hasLogs: Boolean,
+    onShowLogs: () -> Unit
 ) {
     if (isVisible) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
             title = {
-                Text(text = "Processing Status")
+                Text(text = localizationState.getString("processing_status"))
             },
             text = {
                 Column {
@@ -197,10 +217,109 @@ fun ProcessStatusDialog(
                 }
             },
             confirmButton = {
-                Button(onClick = { onDismiss() }) {
-                    Text("Close")
-                }
+                StatusDialogButtonRow(
+                    localizationState = localizationState,
+                    hasLogs = hasLogs,
+                    onShowLogs = onShowLogs,
+                    onDismiss = onDismiss
+                )
             }
         )
+    }
+}
+
+@Composable
+private fun StatusDialogButtonRow(
+    localizationState: LocalizationState,
+    hasLogs: Boolean,
+    onShowLogs: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Row {
+        Button(
+            onClick = onShowLogs,
+            enabled = hasLogs
+        ) {
+            Text(localizationState.getString("view_logs"))
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Button(onClick = onDismiss) {
+            Text(localizationState.getString("close"))
+        }
+    }
+}
+
+@Composable
+fun LogsDialog(
+    localizationState: LocalizationState,
+    isVisible: Boolean,
+    onDismiss: () -> Unit,
+    logs: List<String>
+) {
+    if (!isVisible) return
+
+    val logText = remember(logs) {
+        logs.mapIndexed { index, log -> "[${index + 1}]\n$log" }
+            .joinToString("\n\n")
+    }
+
+    DialogWindow(
+        onCloseRequest = onDismiss,
+        state = rememberDialogState(width = 900.dp, height = 640.dp),
+        title = localizationState.getString("logs")
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colors.background,
+            contentColor = MaterialTheme.colors.onBackground
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = localizationState.getString("logs"),
+                        style = MaterialTheme.typography.h6
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button(
+                        onClick = {
+                            Toolkit.getDefaultToolkit()
+                                .systemClipboard
+                                .setContents(StringSelection(logText), null)
+                        },
+                        enabled = logText.isNotBlank()
+                    ) {
+                        Text(localizationState.getString("copy_logs"))
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(onClick = onDismiss) {
+                        Text(localizationState.getString("close"))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = if (logText.isBlank()) localizationState.getString("no_logs") else logText,
+                    onValueChange = {},
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                    readOnly = true
+                )
+            }
+        }
     }
 }
