@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.retheviper"
-version = "1.0-SNAPSHOT"
+version = "1.0.2"
 
 repositories {
     mavenCentral()
@@ -68,7 +68,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Junkyard"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.2"
 
             macOS {
                 iconFile = file("src/main/resources/icons/Junkyard.icns")
