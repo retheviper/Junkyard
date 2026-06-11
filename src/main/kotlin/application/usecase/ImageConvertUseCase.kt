@@ -15,6 +15,7 @@ import infrastructure.image.getSuitableImageWriter
 import infrastructure.image.toExtension
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.util.UUID
 import java.util.zip.ZipInputStream
 import kotlin.io.path.extension
@@ -73,9 +74,9 @@ class ImageConvertUseCase(
                     .also { tempPath.toFile().deleteRecursively() }
             } else {
                 runCatching { handleImageFile(file, fromFormat, toFormat) }
-                    .onSuccess { converted ->
-                        if (converted) {
-                            Files.deleteIfExists(file)
+                    .onSuccess { convertedFile ->
+                        if (convertedFile != null) {
+                            deleteOriginalIfDifferent(file, convertedFile)
                             context.incrementProcessed()
                         }
                     }
@@ -112,10 +113,15 @@ class ImageConvertUseCase(
         ZipInputStream(Files.newInputStream(zipFilePath)).use { zipInputStream ->
             var entry = zipInputStream.nextEntry
             while (entry != null) {
-                val entryPath = tempPath.resolve(entry.name)
+                val entryPath = tempPath.resolve(entry.name).normalize()
+                if (!entryPath.startsWith(tempPath.normalize())) {
+                    throw IllegalArgumentException("Zip entry escapes target directory: ${entry.name}")
+                }
+
                 if (entry.isDirectory) {
                     Files.createDirectories(entryPath)
                 } else {
+                    entryPath.parent?.let { Files.createDirectories(it) }
                     Files.copy(zipInputStream, entryPath)
                 }
                 entry = zipInputStream.nextEntry
@@ -126,9 +132,9 @@ class ImageConvertUseCase(
             stream.filter { Files.isRegularFile(it) }
                 .forEach { file ->
                     runCatching { handleImageFile(file, fromFormat, toFormat) }
-                        .onSuccess { converted ->
-                            if (converted) {
-                                Files.deleteIfExists(file)
+                        .onSuccess { convertedFile ->
+                            if (convertedFile != null) {
+                                deleteOriginalIfDifferent(file, convertedFile)
                                 convertedCount++
                             }
                         }
@@ -143,30 +149,52 @@ class ImageConvertUseCase(
         return convertedCount
     }
 
-    private fun handleImageFile(filePath: Path, fromFormat: ImageFromFormat, toFormat: Format): Boolean {
+    private fun handleImageFile(filePath: Path, fromFormat: ImageFromFormat, toFormat: Format): Path? {
         val extension = filePath.extension.lowercase()
         if (extension !in imageExtensions) {
-            return false
+            return null
         }
 
         val selectedFromFormat = fromFormat.format
         if (selectedFromFormat != null && extension !in extensionsByFormat.getValue(selectedFromFormat)) {
-            return false
+            return null
         }
 
         val data = Files.readAllBytes(filePath)
-        val detectedFormat = FormatDetector.detect(data).getOrElse { return false }
+        val detectedFormat = FormatDetector.detect(data).getOrElse { return null }
 
         if (!fromFormat.matches(detectedFormat) || detectedFormat == toFormat) {
-            return false
+            return null
         }
 
         val convertedFilePath = filePath.resolveSibling(
             "${filePath.nameWithoutExtension}.${toFormat.toExtension().first()}"
         )
 
-        convertImage(convertedFilePath, data, detectedFormat, toFormat)
-        return true
+        convertImageSafely(filePath, convertedFilePath, data, detectedFormat, toFormat)
+        return convertedFilePath
+    }
+
+    private fun convertImageSafely(
+        originalFilePath: Path,
+        convertedFilePath: Path,
+        data: ByteArray,
+        detectedFormat: Format,
+        toFormat: Format
+    ) {
+        if (originalFilePath.normalize() != convertedFilePath.normalize()) {
+            convertImage(convertedFilePath, data, detectedFormat, toFormat)
+            return
+        }
+
+        val tempFile = Files.createTempFile(originalFilePath.toAbsolutePath().parent, "${originalFilePath.fileName}", ".tmp")
+        runCatching {
+            convertImage(tempFile, data, detectedFormat, toFormat)
+            moveReplacing(tempFile, convertedFilePath)
+        }.onFailure {
+            Files.deleteIfExists(tempFile)
+            throw it
+        }
     }
 
     private fun convertImage(filePath: Path, data: ByteArray, fromFormat: Format, toFormat: Format) {
@@ -186,6 +214,20 @@ class ImageConvertUseCase(
 
     private fun writeImage(toFormat: Format, image: ImmutableImage, filePath: Path) {
         image.output(getSuitableImageWriter(toFormat), filePath)
+    }
+
+    private fun deleteOriginalIfDifferent(originalFile: Path, convertedFile: Path) {
+        if (originalFile.normalize() != convertedFile.normalize()) {
+            Files.deleteIfExists(originalFile)
+        }
+    }
+
+    private fun moveReplacing(source: Path, target: Path) {
+        runCatching {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+        }.getOrElse {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
+        }
     }
 
     private val Path.isArchiveFile: Boolean

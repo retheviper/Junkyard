@@ -42,7 +42,6 @@ import presentation.i18n.LocalizationState
 import presentation.theme.MyTheme
 import infrastructure.system.OS
 import infrastructure.di.appModules
-import presentation.i18n.rememberLocalizationState
 import org.koin.compose.koinInject
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.dsl.module
@@ -159,33 +158,28 @@ fun MainScreen() {
     }
 }
 
-fun main() = application {
-    settingUpApplication()
-
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "🛠️Junkyard",
-        onKeyEvent = { keyEvent ->
-            (OS.current == OS.MAC && keyEvent.isMetaPressed && keyEvent.key == Key.W).also {
-                if (it) exitApplication()
-            }
-        }
-    ) {
-        window.minimumSize = Dimension(800, 780)
-
-        SettingsMenuBar()
-
-        MainScreen()
-    }
-}
-
-@Composable
-private fun settingUpApplication() {
-    val localizationState = rememberLocalizationState()
-
+fun main() {
     startKoin {
-        modules(module { single { localizationState } })
+        modules(module { single { LocalizationState() } })
         modules(appModules)
+    }
+
+    application {
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = "🛠️Junkyard",
+            onKeyEvent = { keyEvent ->
+                (OS.current == OS.MAC && keyEvent.isMetaPressed && keyEvent.key == Key.W).also {
+                    if (it) exitApplication()
+                }
+            }
+        ) {
+            window.minimumSize = Dimension(800, 780)
+
+            SettingsMenuBar()
+
+            MainScreen()
+        }
     }
 }
 

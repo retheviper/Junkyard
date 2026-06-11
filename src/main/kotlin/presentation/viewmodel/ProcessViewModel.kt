@@ -9,9 +9,11 @@ import androidx.lifecycle.viewModelScope
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.file.Path
-import kotlin.coroutines.suspendCoroutine
+import java.awt.datatransfer.DataFlavor
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
@@ -19,9 +21,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.koin.core.component.KoinComponent
-import java.awt.datatransfer.DataFlavor
-import java.io.File
-import kotlin.coroutines.resume
 
 enum class TargetPickerType {
     DIRECTORY,
@@ -72,6 +71,8 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     private fun stopProcessing() {
         _isProcessing.value = false
         _current.value = 0F
+        _total.value = 0F
+        _progress.value = 0F
         _currentFile.value = ""
     }
 
@@ -125,9 +126,16 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     }
 
     protected fun processWithCount(block: () -> Unit) {
-        runCatching { block(); incrementCurrent() }
+        runCatching { block() }
             .onSuccess { incrementProcessed() }
-            .onFailure { incrementFailed(); it.printStackTrace() }
+            .onFailure {
+                if (it is CancellationException) {
+                    throw it
+                }
+                incrementFailed()
+                recordError(it)
+            }
+            .also { incrementCurrent() }
     }
 
     protected fun process(block: suspend (Path) -> Unit) {
@@ -165,8 +173,11 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
     fun handleDrop(event: DragAndDropEvent, target: TargetPickerType): Boolean {
         val files = event.awtTransferable
             .let { transferable ->
-                (transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<*>)
-                    .takeIf { transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor) }
+                if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                    transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<*>
+                } else {
+                    null
+                }
             }?.filterIsInstance<File>()
 
         val isTargetFile: (File) -> Boolean = { file ->

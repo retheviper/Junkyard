@@ -34,7 +34,9 @@ class ChangeExtensionViewModel : ProcessViewModel() {
         process { basePath ->
             changeExtensionUseCase.execute(
                 basePath = basePath,
+                fromExtension = fromExtension.value,
                 toExtension = toExtension.value,
+                ignoreCase = ignoreCase.value,
                 context = createProcessingContext()
             )
         }
