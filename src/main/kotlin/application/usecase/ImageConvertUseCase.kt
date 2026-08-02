@@ -28,8 +28,8 @@ class ImageConvertUseCase(
     private val imageIOReader: ImageIOReader,
     private val gif2WebpWriter: Gif2WebpWriter
 ) : KoinComponent {
-    private val imageExtensions = Format.entries
-        .flatMap { it.toExtension() }
+    private val imageExtensions = ImageFromFormat.entries
+        .flatMap { it.extensions }
         .map { it.lowercase() }
         .toSet()
 
@@ -37,12 +37,8 @@ class ImageConvertUseCase(
         .map { it.name.lowercase() }
         .toSet()
 
-    private val extensionsByFormat = Format.entries.associateWith { format ->
-        format.toExtension().map { it.lowercase() }.toSet()
-    }
-
     fun supportedTargetExtensions(): List<String> = buildList {
-        addAll(Format.entries.flatMap { it.toExtension() })
+        addAll(ImageFromFormat.entries.flatMap { it.extensions })
         addAll(ArchiveFormat.entries.map { it.name.lowercase() })
     }
 
@@ -155,21 +151,25 @@ class ImageConvertUseCase(
             return null
         }
 
-        val selectedFromFormat = fromFormat.format
-        if (selectedFromFormat != null && extension !in extensionsByFormat.getValue(selectedFromFormat)) {
+        if (!fromFormat.matchesExtension(extension)) {
             return null
         }
 
         val data = Files.readAllBytes(filePath)
+        val convertedFilePath = filePath.resolveSibling(
+            "${filePath.nameWithoutExtension}.${toFormat.toExtension().first()}"
+        )
+
+        if (extension == AVIF_EXTENSION) {
+            writeImage(toFormat, imageIOReader.read(data), convertedFilePath)
+            return convertedFilePath
+        }
+
         val detectedFormat = FormatDetector.detect(data).getOrElse { return null }
 
         if (!fromFormat.matches(detectedFormat) || detectedFormat == toFormat) {
             return null
         }
-
-        val convertedFilePath = filePath.resolveSibling(
-            "${filePath.nameWithoutExtension}.${toFormat.toExtension().first()}"
-        )
 
         convertImageSafely(filePath, convertedFilePath, data, detectedFormat, toFormat)
         return convertedFilePath
@@ -240,5 +240,9 @@ class ImageConvertUseCase(
             extension in archiveExtensions -> includeArchiveFiles
             else -> false
         }
+    }
+
+    private companion object {
+        const val AVIF_EXTENSION = "avif"
     }
 }

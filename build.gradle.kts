@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.retheviper"
-version = "1.0.3"
+version = "1.0.4"
 
 repositories {
     mavenCentral()
@@ -29,7 +29,10 @@ dependencies {
     implementation(libs.junrar)
     implementation(libs.scrimage.core)
     implementation(libs.scrimage.webp)
+    implementation(libs.avif.imageio.native.reader)
     implementation(libs.slf4j.simple)
+
+    testImplementation(kotlin("test"))
 }
 
 tasks {
@@ -68,7 +71,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Junkyard"
-            packageVersion = "1.0.3"
+            packageVersion = "1.0.4"
 
             macOS {
                 iconFile = file("src/main/resources/icons/Junkyard.icns")

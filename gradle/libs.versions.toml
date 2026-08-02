@@ -8,6 +8,7 @@ koin = "4.1.1"
 filekit = "0.8.8"
 junrar = "7.5.8"
 scrimage = "4.3.8"
+avif-imageio = "0.1.0"
 slf4j = "2.0.17"
 
 [libraries]
@@ -21,6 +22,7 @@ filekit-compose = { group = "io.github.vinceglb", name = "filekit-compose", vers
 junrar = { group = "com.github.junrar", name = "junrar", version.ref = "junrar" }
 scrimage-core = { group = "com.sksamuel.scrimage", name = "scrimage-core", version.ref = "scrimage" }
 scrimage-webp = { group = "com.sksamuel.scrimage", name = "scrimage-webp", version.ref = "scrimage" }
+avif-imageio-native-reader = { module = "io.github.nemanjastokuca:avif-imageio-native-reader", version.ref = "avif-imageio" }
 slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
