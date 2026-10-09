@@ -9,10 +9,11 @@ import com.sksamuel.scrimage.format.FormatDetector
 import com.sksamuel.scrimage.nio.AnimatedGifReader
 import com.sksamuel.scrimage.nio.ImageIOReader
 import com.sksamuel.scrimage.nio.ImageSource
-import com.sksamuel.scrimage.nio.ImageWriter
 import com.sksamuel.scrimage.nio.StreamingGifWriter
 import com.sksamuel.scrimage.webp.WebpImageReader
+import infrastructure.image.canEncode
 import infrastructure.image.getSuitableImageWriter
+import infrastructure.image.maxDimension
 import infrastructure.image.toExtension
 import java.nio.file.Files
 import java.nio.file.Path
@@ -37,13 +38,14 @@ class CreateThumbnailUseCase(
         context: ProcessingContext
     ) {
         val targets = Files.walk(basePath).use { stream ->
-            stream.filter { file ->
-                targetFormats.any { format ->
-                    format.toExtension().any { extension ->
-                        file.extension.equals(extension, true)
+            stream.filter { file -> Files.isRegularFile(file) }
+                .filter { file ->
+                    targetFormats.any { format ->
+                        format.toExtension().any { extension ->
+                            file.extension.equals(extension, true)
+                        }
                     }
-                }
-            }.toList()
+                }.toList()
         }
 
         context.setTotal(targets.size)
@@ -51,27 +53,10 @@ class CreateThumbnailUseCase(
         targets.forEach { file ->
             context.checkpoint()
             context.updateCurrentFile(file)
-            val data = Files.readAllBytes(file)
-            val format = FormatDetector.detect(data).getOrNull()
-
-            if (!targetFormats.contains(format)) {
-                return@forEach
-            }
-
-            val outputExtension = when (outputFormat) {
-                ImageOutputFormat.ORIGINAL -> file.extension
-                ImageOutputFormat.PNG -> "png"
-                ImageOutputFormat.JPEG -> "jpg"
-                ImageOutputFormat.WEBP -> "webp"
-            }
-
-            val thumbnailPath = file.resolveSibling("${file.nameWithoutExtension}_thumbnail.$outputExtension")
-
-            context.processWithCount {
+            runCatching {
                 createThumbnail(
-                    thumbnailPath = thumbnailPath,
-                    data = data,
-                    format = requireNotNull(format),
+                    file = file,
+                    targetFormats = targetFormats,
                     outputFormat = outputFormat,
                     option = option,
                     width = width,
@@ -79,45 +64,82 @@ class CreateThumbnailUseCase(
                     ratio = ratio
                 )
             }
+                .onSuccess { created ->
+                    if (created) {
+                        context.incrementProcessed()
+                    }
+                }
+                .onFailure {
+                    context.incrementFailed()
+                    context.printError(it)
+                }
+            context.incrementCurrent()
         }
     }
 
+    /** Creates a thumbnail next to [file]. Returns false when the file content is not one of [targetFormats]. */
     private fun createThumbnail(
-        thumbnailPath: Path,
-        data: ByteArray,
-        format: Format,
+        file: Path,
+        targetFormats: Set<Format>,
         outputFormat: ImageOutputFormat,
         option: CreateThumbnailOption,
         width: Int,
         height: Int,
         ratio: Double
-    ) {
-        when (format) {
-            Format.GIF -> {
-                val gif = AnimatedGifReader.read(ImageSource.of(data))
+    ): Boolean {
+        val data = Files.readAllBytes(file)
+        val format = FormatDetector.detect(data).getOrNull()
+        if (format == null || format !in targetFormats) {
+            return false
+        }
 
-                if (outputFormat == ImageOutputFormat.ORIGINAL) {
-                    Files.newOutputStream(thumbnailPath).use { output ->
-                        streamingGifWriter.prepareStream(output, gif.frames.first().type).use { gifStream ->
-                            gif.frames.forEachIndexed { index, image ->
-                                gifStream.writeFrame(toThumbnail(image, option, width, height, ratio), gif.getDelay(index))
+        val outputExtension = when (outputFormat) {
+            ImageOutputFormat.ORIGINAL -> file.extension
+            ImageOutputFormat.PNG -> "png"
+            ImageOutputFormat.JPEG -> "jpg"
+            ImageOutputFormat.WEBP -> "webp"
+        }
+        val thumbnailPath = file.resolveSibling("${file.nameWithoutExtension}_thumbnail.$outputExtension")
+        val thumbnailFormat = outputFormat.toFormat(format)
+
+        writeAtomically(thumbnailPath) { tempFile ->
+            when (format) {
+                Format.GIF -> {
+                    val gif = AnimatedGifReader.read(ImageSource.of(data))
+
+                    if (outputFormat == ImageOutputFormat.ORIGINAL) {
+                        Files.newOutputStream(tempFile).use { output ->
+                            streamingGifWriter.prepareStream(output, gif.frames.first().type).use { gifStream ->
+                                gif.frames.forEachIndexed { index, image ->
+                                    gifStream.writeFrame(toThumbnail(image, option, width, height, ratio), gif.getDelay(index))
+                                }
                             }
                         }
+                    } else {
+                        val thumbnail = toThumbnail(gif.frames.first(), option, width, height, ratio)
+                        writeThumbnail(file, thumbnail, thumbnailFormat, tempFile)
                     }
-                } else {
-                    val image = toThumbnail(gif.frames.first(), option, width, height, ratio)
-                    image.output(getWriter(outputFormat), thumbnailPath)
                 }
-            }
 
-            else -> {
-                val image = when (format) {
-                    Format.WEBP -> webpImageReader.read(data)
-                    else -> imageIOReader.read(data)
+                else -> {
+                    val image = when (format) {
+                        Format.WEBP -> webpImageReader.read(data)
+                        else -> imageIOReader.read(data)
+                    }
+                    writeThumbnail(file, toThumbnail(image, option, width, height, ratio), thumbnailFormat, tempFile)
                 }
-                toThumbnail(image, option, width, height, ratio).output(getWriter(outputFormat), thumbnailPath)
             }
         }
+        return true
+    }
+
+    private fun writeThumbnail(source: Path, thumbnail: ImmutableImage, format: Format, target: Path) {
+        require(format.canEncode(thumbnail.width, thumbnail.height)) {
+            val maxDimension = format.maxDimension()
+            "The thumbnail of ${source.fileName} would be ${thumbnail.width} x ${thumbnail.height} pixels, " +
+                "but $format supports up to $maxDimension x $maxDimension pixels"
+        }
+        thumbnail.output(getSuitableImageWriter(format), target)
     }
 
     private fun toThumbnail(
@@ -134,14 +156,10 @@ class CreateThumbnailUseCase(
         }
     }
 
-    private fun getWriter(outputFormat: ImageOutputFormat): ImageWriter {
-        return getSuitableImageWriter(
-            when (outputFormat) {
-                ImageOutputFormat.JPEG -> Format.JPEG
-                ImageOutputFormat.PNG -> Format.PNG
-                ImageOutputFormat.WEBP -> Format.WEBP
-                else -> throw IllegalArgumentException("Invalid image output format")
-            }
-        )
+    private fun ImageOutputFormat.toFormat(sourceFormat: Format): Format = when (this) {
+        ImageOutputFormat.ORIGINAL -> sourceFormat
+        ImageOutputFormat.JPEG -> Format.JPEG
+        ImageOutputFormat.PNG -> Format.PNG
+        ImageOutputFormat.WEBP -> Format.WEBP
     }
 }

@@ -34,6 +34,7 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -116,7 +117,16 @@ fun MainScreen() {
                                 }
                             },
                             icon = { Text(it.icon) },
-                            onClick = { navController.navigate(it.name) },
+                            onClick = {
+                                // Switch screens without stacking a new back stack entry on every click.
+                                navController.navigate(it.name) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
                             selected = navBackStackEntry?.destination?.route == it.name
                         )
                     }

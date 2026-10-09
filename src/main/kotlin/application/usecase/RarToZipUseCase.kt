@@ -22,26 +22,21 @@ class RarToZipUseCase {
         targets.forEach {
             context.checkpoint()
             context.updateCurrentFile(it)
-            convert(it, context)
+            context.processWithCount { convert(it) }
         }
     }
 
-    private fun convert(rarFile: Path, context: ProcessingContext) {
-        val unarchivedFolder = rarFile.resolveSibling("unrar_${rarFile.nameWithoutExtension}")
-        Files.createDirectory(unarchivedFolder)
-        context.incrementCurrent()
-
-        runCatching { Junrar.extract(rarFile.toFile(), unarchivedFolder.toFile()) }
-            .onFailure {
-                unarchivedFolder.toFile().deleteRecursively()
-                context.incrementFailed()
-                return
-            }
-
-        val zipFilePath = rarFile.resolveSibling("${rarFile.nameWithoutExtension}.zip")
-        zipFiles(unarchivedFolder, zipFilePath)
-
-        unarchivedFolder.toFile().deleteRecursively()
-        context.incrementProcessed()
+    private fun convert(rarFile: Path) {
+        // A unique folder never collides with leftovers or user folders that share the archive name.
+        val unarchivedFolder = Files.createTempDirectory(
+            rarFile.toAbsolutePath().parent,
+            "unrar_${rarFile.nameWithoutExtension}_"
+        )
+        try {
+            Junrar.extract(rarFile.toFile(), unarchivedFolder.toFile())
+            zipFiles(unarchivedFolder, rarFile.resolveSibling("${rarFile.nameWithoutExtension}.zip"))
+        } finally {
+            unarchivedFolder.toFile().deleteRecursively()
+        }
     }
 }

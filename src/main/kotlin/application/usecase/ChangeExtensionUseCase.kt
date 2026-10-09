@@ -1,8 +1,10 @@
 package application.usecase
 
 import application.processing.ProcessingContext
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.UUID
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 
@@ -36,9 +38,26 @@ class ChangeExtensionUseCase {
                 context.updateCurrentFile(it)
                 val targetPath = it.resolveSibling(newFileName)
                 if (targetPath.normalize() != it.normalize()) {
-                    Files.move(it, targetPath)
+                    rename(it, targetPath)
                 }
             }
+        }
+    }
+
+    private fun rename(source: Path, target: Path) {
+        if (!isSameExistingFile(source, target)) {
+            Files.move(source, target)
+            return
+        }
+
+        // Case-insensitive file systems treat a case-only rename as a no-op, so move through a temporary name.
+        val temporary = source.resolveSibling("${UUID.randomUUID()}.tmp")
+        Files.move(source, temporary)
+        try {
+            Files.move(temporary, target)
+        } catch (error: IOException) {
+            Files.move(temporary, source)
+            throw error
         }
     }
 

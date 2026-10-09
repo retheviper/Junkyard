@@ -1,24 +1,29 @@
 package presentation.viewmodel
 
+import application.model.OversizedImage
 import application.processing.ProcessingContext
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sksamuel.scrimage.format.Format
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.file.Path
 import java.awt.datatransfer.DataFlavor
 import java.io.File
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.koin.core.component.KoinComponent
 
@@ -26,6 +31,15 @@ enum class TargetPickerType {
     DIRECTORY,
     FILE,
     BOTH
+}
+
+/** A warning the user has to accept before processing continues. */
+sealed interface ProcessWarning {
+    data class ImageSizeLimitExceeded(
+        val format: Format,
+        val maxDimension: Int,
+        val images: List<OversizedImage>
+    ) : ProcessWarning
 }
 
 abstract class ProcessViewModel : ViewModel(), KoinComponent {
@@ -56,6 +70,12 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
 
     private val _logs = MutableStateFlow<List<String>>(emptyList())
     val logs = _logs.asStateFlow()
+
+    private val _warning = MutableStateFlow<ProcessWarning?>(null)
+    val warning = _warning.asStateFlow()
+
+    @Volatile
+    private var warningResponse: CompletableDeferred<Boolean>? = null
 
     fun setPath(path: Path) {
         _path.value = path
@@ -140,33 +160,56 @@ abstract class ProcessViewModel : ViewModel(), KoinComponent {
 
     protected fun process(block: suspend (Path) -> Unit) {
         val basePath = path.value ?: return
-
-        val job = viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                startProcessing()
-                recordLog("Started: $basePath")
-                runCatching { block(basePath) }
-                    .onSuccess {
-                        recordLog("Completed. Success: ${processed.value}, Failed: ${failed.value}")
-                    }
-                    .onFailure {
-                        if (!isActive) {
-                            recordLog("Canceled.")
-                        } else {
-                            recordError(it)
-                        }
-                    }
-                    .also { stopProcessing() }
-            }
+        // A cancelled job keeps running until its current file is done, so a new run waits for it to complete.
+        if (_job.value?.isCompleted == false) {
+            return
         }
 
-        _job.value = job
+        startProcessing()
+        _job.value = viewModelScope.launch(Dispatchers.IO) {
+            recordLog("Started: $basePath")
+            try {
+                block(basePath)
+                recordLog("Completed. Success: ${processed.value}, Failed: ${failed.value}")
+            } catch (error: Throwable) {
+                if (isActive) {
+                    recordError(error)
+                } else {
+                    recordLog("Canceled.")
+                }
+                if (error is CancellationException) {
+                    throw error
+                }
+            } finally {
+                stopProcessing()
+            }
+        }
+    }
+
+    /** Shows [warning] and suspends until the user responds. Declining cancels the processing. */
+    protected suspend fun confirmWarning(warning: ProcessWarning) {
+        val response = CompletableDeferred<Boolean>()
+        warningResponse = response
+        _warning.value = warning
+        val proceed = try {
+            response.await()
+        } finally {
+            _warning.value = null
+            warningResponse = null
+        }
+
+        if (!proceed) {
+            currentCoroutineContext().cancel()
+            currentCoroutineContext().ensureActive()
+        }
+    }
+
+    fun respondToWarning(proceed: Boolean) {
+        warningResponse?.complete(proceed)
     }
 
     fun cancel() {
         _job.value?.cancel()
-        _job.value = null
-        stopProcessing()
     }
 
     @OptIn(ExperimentalComposeUiApi::class)

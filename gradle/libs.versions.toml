@@ -1,24 +1,26 @@
 [versions]
-androidx-lifecycle = "2.9.6"
+androidx-lifecycle = "2.11.0"
 androidx-navigation = "2.9.2"
-compose-plugin = "1.10.2"
-kotlin = "2.3.10"
-kotlinx-coroutines-swing = "1.10.2"
-koin = "4.1.1"
-filekit = "0.8.8"
-junrar = "7.5.8"
-scrimage = "4.3.8"
+compose-plugin = "1.12.1"
+compose-material-icons = "1.7.3"
+kotlin = "2.4.21"
+kotlinx-coroutines-swing = "1.11.0"
+koin = "4.2.2"
+filekit = "0.16.0"
+junrar = "8.1.1"
+scrimage = "4.6.8"
 avif-imageio = "0.1.0"
-slf4j = "2.0.17"
+slf4j = "2.0.20"
 
 [libraries]
 androidx-lifecycle-viewmodel-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-compose-desktop = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose-desktop", version.ref = "androidx-navigation" }
+compose-material-icons-core = { group = "org.jetbrains.compose.material", name = "material-icons-core", version.ref = "compose-material-icons" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines-swing" }
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
 koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
-filekit-core = { group = "io.github.vinceglb", name = "filekit-core-jvm", version.ref = "filekit" }
-filekit-compose = { group = "io.github.vinceglb", name = "filekit-compose", version.ref = "filekit" }
+filekit-core = { group = "io.github.vinceglb", name = "filekit-core", version.ref = "filekit" }
+filekit-dialogs-compose = { group = "io.github.vinceglb", name = "filekit-dialogs-compose", version.ref = "filekit" }
 junrar = { group = "com.github.junrar", name = "junrar", version.ref = "junrar" }
 scrimage-core = { group = "com.sksamuel.scrimage", name = "scrimage-core", version.ref = "scrimage" }
 scrimage-webp = { group = "com.sksamuel.scrimage", name = "scrimage-webp", version.ref = "scrimage" }

@@ -20,11 +20,13 @@ class ArchiveDirectoriesUseCase {
             context.updateCurrentFile(subDir)
             val zipFilePath = basePath.resolve("${subDir.fileName}.zip")
             context.processWithCount {
-                ZipOutputStream(zipFilePath.toFile().outputStream()).use { zipOutputStream ->
-                    if (includeParentDirectory) {
-                        zipDirectory(subDir, basePath, zipOutputStream)
-                    } else {
-                        zipFilesOnly(subDir, zipOutputStream)
+                writeAtomically(zipFilePath) { tempZipFile ->
+                    newZipOutputStream(tempZipFile).use { zipOutputStream ->
+                        if (includeParentDirectory) {
+                            zipDirectory(subDir, basePath, zipOutputStream)
+                        } else {
+                            zipFilesOnly(subDir, zipOutputStream)
+                        }
                     }
                 }
             }

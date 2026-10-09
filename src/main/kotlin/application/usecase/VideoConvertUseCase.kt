@@ -5,6 +5,7 @@ import application.model.VideoFormat
 import application.processing.ProcessingContext
 import infrastructure.binary.BinaryBundleService
 import infrastructure.system.OS
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -72,10 +73,17 @@ class VideoConvertUseCase(
 
     private suspend fun convertVideo(encoder: String, filePath: Path) = withContext(Dispatchers.IO) {
         val targetPath = filePath.resolveSibling("${filePath.nameWithoutExtension}.mp4")
+        // Never overwrite: "a.avi" and "a.mov" both map to "a.mp4", and each original is deleted after conversion.
+        if (Files.exists(targetPath)) {
+            throw FileAlreadyExistsException(filePath.toString(), targetPath.toString(), "converted file already exists")
+        }
 
         val process = ProcessBuilder(
             ffmpegPath,
-            "-y",
+            "-hide_banner",
+            "-nostats",
+            "-nostdin",
+            "-n",
             "-i", filePath.absolutePathString(),
             "-c:v", encoder,
             "-c:a", "aac",
@@ -84,7 +92,17 @@ class VideoConvertUseCase(
             .redirectOutput(ProcessBuilder.Redirect.DISCARD)
             .start()
 
-        val errorOutput = StringBuilder()
+        // Closing the app must not leave ffmpeg running in the background or a truncated output behind.
+        val shutdownHook = thread(start = false, name = "ffmpeg-shutdown") {
+            if (process.isAlive) {
+                process.destroyForcibly().waitFor(2, TimeUnit.SECONDS)
+                Files.deleteIfExists(targetPath)
+            }
+        }
+        Runtime.getRuntime().addShutdownHook(shutdownHook)
+
+        // FFmpeg reports the actual failure at the end of its output, so only the last lines are kept.
+        val errorTail = ArrayDeque<String>()
         val errorReader = thread(
             start = true,
             isDaemon = true,
@@ -92,8 +110,9 @@ class VideoConvertUseCase(
         ) {
             process.errorStream.bufferedReader().useLines { lines ->
                 lines.forEach { line ->
-                    if (errorOutput.length < MAX_FFMPEG_ERROR_LENGTH) {
-                        errorOutput.appendLine(line)
+                    errorTail.addLast(line)
+                    if (errorTail.size > MAX_FFMPEG_ERROR_LINES) {
+                        errorTail.removeFirst()
                     }
                 }
             }
@@ -104,18 +123,22 @@ class VideoConvertUseCase(
             errorReader.join()
 
             if (exitCode != 0) {
-                throw RuntimeException("FFmpeg failed with exit code $exitCode. Error: $errorOutput")
+                throw RuntimeException("FFmpeg failed with exit code $exitCode. Error:\n${errorTail.joinToString("\n")}")
             }
-        } catch (error: CancellationException) {
+        } catch (error: Throwable) {
             process.destroy()
             if (!process.waitFor(2, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
             }
+            Files.deleteIfExists(targetPath)
             throw error
+        } finally {
+            // Removing the hook fails once the JVM is already shutting down, when the hook itself handles cleanup.
+            runCatching { Runtime.getRuntime().removeShutdownHook(shutdownHook) }
         }
     }
 
     private companion object {
-        const val MAX_FFMPEG_ERROR_LENGTH = 16_384
+        const val MAX_FFMPEG_ERROR_LINES = 50
     }
 }

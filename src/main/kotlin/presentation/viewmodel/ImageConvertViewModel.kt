@@ -3,6 +3,7 @@ package presentation.viewmodel
 import application.model.ImageFromFormat
 import application.usecase.ImageConvertUseCase
 import com.sksamuel.scrimage.format.Format
+import infrastructure.image.maxDimension
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.core.component.inject
@@ -34,13 +35,36 @@ class ImageConvertViewModel : ProcessViewModel() {
     }
 
     override fun onProcessClick() {
+        // The settings are read once so that the size check and the conversion use the same ones.
+        val fromFormat = fromFormat.value
+        val toFormat = toFormat.value
+        val includeArchiveFiles = includeArchiveFiles.value
+
         process { basePath ->
+            val context = createProcessingContext()
+            val oversizedImages = imageConvertUseCase.findOversizedImages(
+                basePath = basePath,
+                fromFormat = fromFormat,
+                toFormat = toFormat,
+                includeArchiveFiles = includeArchiveFiles,
+                context = context
+            )
+            if (oversizedImages.isNotEmpty()) {
+                confirmWarning(
+                    ProcessWarning.ImageSizeLimitExceeded(
+                        format = toFormat,
+                        maxDimension = checkNotNull(toFormat.maxDimension()),
+                        images = oversizedImages
+                    )
+                )
+            }
+
             imageConvertUseCase.execute(
                 basePath = basePath,
-                fromFormat = fromFormat.value,
-                toFormat = toFormat.value,
-                includeArchiveFiles = includeArchiveFiles.value,
-                context = createProcessingContext()
+                fromFormat = fromFormat,
+                toFormat = toFormat,
+                includeArchiveFiles = includeArchiveFiles,
+                context = context
             )
         }
     }

@@ -8,24 +8,27 @@ plugins {
 }
 
 group = "com.retheviper"
-version = "1.0.4"
+version = "1.0.5"
 
 repositories {
     mavenCentral()
-    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     google()
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.compose.material:material-icons-extended-desktop:1.7.3")
+    implementation(libs.compose.material.icons.core)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose.desktop)
     implementation(libs.kotlinx.coroutines.swing)
     implementation(libs.koin.core)
     implementation(libs.koin.compose)
     implementation(libs.filekit.core)
-    implementation(libs.filekit.compose)
+    implementation(libs.filekit.dialogs.compose)
     implementation(libs.junrar)
     implementation(libs.scrimage.core)
     implementation(libs.scrimage.webp)
@@ -63,6 +66,8 @@ tasks {
 compose.desktop {
     application {
         mainClass = "presentation.MainKt"
+        // Run and package with the JDK the code is compiled for, not whichever JDK happens to run Gradle.
+        javaHome = javaToolchains.launcherFor(java.toolchain).get().metadata.installationPath.asFile.absolutePath
 
         buildTypes.release.proguard {
             configurationFiles.from(project.file("proguard-rules.pro"))
@@ -71,7 +76,9 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Junkyard"
-            packageVersion = "1.0.4"
+            packageVersion = "1.0.5"
+            // dbus-java, used by FileKit's Linux dialogs, needs com.sun.security.auth.module.UnixSystem.
+            modules("jdk.security.auth")
 
             macOS {
                 iconFile = file("src/main/resources/icons/Junkyard.icns")

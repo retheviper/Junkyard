@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -30,12 +33,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
-import io.github.vinceglb.filekit.compose.rememberDirectoryPickerLauncher
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerType
+import java.util.Locale
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberDirectoryPickerLauncher
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import org.koin.compose.koinInject
 import presentation.i18n.LocalizationState
 import presentation.viewmodel.ProcessViewModel
+import presentation.viewmodel.ProcessWarning
 import presentation.viewmodel.TargetPickerType
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
@@ -50,22 +56,19 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
     val progress = viewModel.progress.collectAsState()
     val currentFile = viewModel.currentFile.collectAsState()
     val logs = viewModel.logs.collectAsState()
+    val warning = viewModel.warning.collectAsState()
     val showStatusDialog = remember { mutableStateOf(false) }
     val showLogsDialog = remember { mutableStateOf(false) }
 
     val directoryLauncher = rememberDirectoryPickerLauncher(
-        title = localizationState.getString("select_directory"),
-        initialDirectory = null,
-        platformSettings = null
+        dialogSettings = FileKitDialogSettings(title = localizationState.getString("select_directory"))
     ) { directory ->
         directory?.let { viewModel.setPath(it.file.toPath()) }
     }
 
     val fileLauncher = rememberFilePickerLauncher(
-        title = localizationState.getString("select_file"),
-        type = PickerType.File(extensions = viewModel.targetExtensions),
-        initialDirectory = null,
-        platformSettings = null
+        type = FileKitType.File(extensions = viewModel.targetExtensions),
+        dialogSettings = FileKitDialogSettings(title = localizationState.getString("select_file"))
     ) { file ->
         file?.let { viewModel.setPath(it.file.toPath()) }
     }
@@ -150,15 +153,28 @@ fun ProcessesSection(viewModel: ProcessViewModel) {
                         onClick = { showStatusDialog.value = true },
                         enabled = isProcessing.value || processed.value > 0 || failed.value > 0
                     ) {
-                        Text("Show Status")
+                        Text(localizationState.getString("show_status"))
                     }
                 }
             }
         }
 
+        warning.value?.let {
+            ProcessWarningDialog(
+                localizationState = localizationState,
+                warning = it,
+                onContinue = { viewModel.respondToWarning(proceed = true) },
+                onCancel = {
+                    viewModel.respondToWarning(proceed = false)
+                    showStatusDialog.value = false
+                }
+            )
+        }
+
         ProcessStatusDialog(
             localizationState = localizationState,
-            isVisible = showStatusDialog.value,
+            // The warning replaces the status dialog until the user decides.
+            isVisible = showStatusDialog.value && warning.value == null,
             onDismiss = { showStatusDialog.value = false },
             processed = processed.value,
             failed = failed.value,
@@ -223,6 +239,59 @@ fun ProcessStatusDialog(
                     onShowLogs = onShowLogs,
                     onDismiss = onDismiss
                 )
+            }
+        )
+    }
+}
+
+@Composable
+private fun ProcessWarningDialog(
+    localizationState: LocalizationState,
+    warning: ProcessWarning,
+    onContinue: () -> Unit,
+    onCancel: () -> Unit
+) {
+    when (warning) {
+        is ProcessWarning.ImageSizeLimitExceeded -> AlertDialog(
+            onDismissRequest = onCancel,
+            title = {
+                Text(text = localizationState.getString("image_size_limit_title"))
+            },
+            text = {
+                Column {
+                    Text(
+                        text = String.format(
+                            Locale.ROOT,
+                            localizationState.getString("image_size_limit_message"),
+                            warning.images.size,
+                            warning.format.name,
+                            warning.maxDimension
+                        ),
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    LazyColumn(modifier = Modifier.heightIn(max = 240.dp)) {
+                        items(warning.images) { image ->
+                            Text(
+                                text = "${image.path} (${image.size.width} x ${image.size.height})",
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Row {
+                    Button(onClick = onCancel) {
+                        Text(localizationState.getString("cancel"))
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(onClick = onContinue) {
+                        Text(localizationState.getString("continue"))
+                    }
+                }
             }
         )
     }

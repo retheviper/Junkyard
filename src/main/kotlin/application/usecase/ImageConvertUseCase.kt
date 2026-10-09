@@ -2,8 +2,8 @@ package application.usecase
 
 import application.model.ArchiveFormat
 import application.model.ImageFromFormat
+import application.model.OversizedImage
 import application.processing.ProcessingContext
-import com.sksamuel.scrimage.ImmutableImage
 import com.sksamuel.scrimage.format.Format
 import com.sksamuel.scrimage.format.FormatDetector
 import com.sksamuel.scrimage.nio.AnimatedGifReader
@@ -11,16 +11,21 @@ import com.sksamuel.scrimage.nio.ImageIOReader
 import com.sksamuel.scrimage.nio.ImageSource
 import com.sksamuel.scrimage.webp.Gif2WebpWriter
 import com.sksamuel.scrimage.webp.WebpImageReader
+import infrastructure.image.ImageSize
+import infrastructure.image.canEncode
 import infrastructure.image.getSuitableImageWriter
+import infrastructure.image.maxDimension
+import infrastructure.image.readImageSize
 import infrastructure.image.toExtension
+import java.io.InputStream
+import java.nio.file.FileAlreadyExistsException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.util.UUID
-import java.util.zip.ZipInputStream
+import java.util.zip.ZipFile
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
-import kotlin.jvm.optionals.getOrElse
+import kotlin.jvm.optionals.getOrNull
 import org.koin.core.component.KoinComponent
 
 class ImageConvertUseCase(
@@ -40,6 +45,54 @@ class ImageConvertUseCase(
     fun supportedTargetExtensions(): List<String> = buildList {
         addAll(ImageFromFormat.entries.flatMap { it.extensions })
         addAll(ArchiveFormat.entries.map { it.name.lowercase() })
+    }
+
+    /**
+     * Lists the images [execute] would convert but [toFormat] cannot encode because of its size limit.
+     * Only image headers are read, so this is cheap compared with the conversion itself.
+     */
+    suspend fun findOversizedImages(
+        basePath: Path,
+        fromFormat: ImageFromFormat,
+        toFormat: Format,
+        includeArchiveFiles: Boolean,
+        context: ProcessingContext
+    ): List<OversizedImage> {
+        if (toFormat.maxDimension() == null) {
+            return emptyList()
+        }
+
+        val oversizedImages = mutableListOf<OversizedImage>()
+        collectTargets(basePath, includeArchiveFiles).forEach { file ->
+            context.checkpoint()
+            context.updateCurrentFile(file)
+            val displayPath = if (file == basePath) file.fileName.toString() else basePath.relativize(file).toString()
+            // Files that cannot be inspected are left to the conversion, which reports them as failures.
+            runCatching {
+                if (includeArchiveFiles && file.isArchiveFile) {
+                    ZipFile(file.toFile()).use { zipFile ->
+                        zipFile.entries().asSequence()
+                            .filterNot { it.isDirectory }
+                            .forEach { entry ->
+                                val size = zipFile.getInputStream(entry).use { input ->
+                                    readConversionSize(entry.name.substringAfterLast('/'), input, fromFormat, toFormat)
+                                }
+                                if (size != null && !toFormat.canEncode(size.width, size.height)) {
+                                    oversizedImages += OversizedImage("$displayPath/${entry.name}", size)
+                                }
+                            }
+                    }
+                } else {
+                    val size = Files.newInputStream(file).use { input ->
+                        readConversionSize(file.fileName.toString(), input, fromFormat, toFormat)
+                    }
+                    if (size != null && !toFormat.canEncode(size.width, size.height)) {
+                        oversizedImages += OversizedImage(displayPath, size)
+                    }
+                }
+            }
+        }
+        return oversizedImages
     }
 
     suspend fun execute(
@@ -70,9 +123,8 @@ class ImageConvertUseCase(
                     .also { tempPath.toFile().deleteRecursively() }
             } else {
                 runCatching { handleImageFile(file, fromFormat, toFormat) }
-                    .onSuccess { convertedFile ->
-                        if (convertedFile != null) {
-                            deleteOriginalIfDifferent(file, convertedFile)
+                    .onSuccess { converted ->
+                        if (converted) {
                             context.incrementProcessed()
                         }
                     }
@@ -105,8 +157,7 @@ class ImageConvertUseCase(
         toFormat: Format,
         context: ProcessingContext
     ): Int {
-        var convertedCount = 0
-        ZipInputStream(Files.newInputStream(zipFilePath)).use { zipInputStream ->
+        newZipInputStream(zipFilePath).use { zipInputStream ->
             var entry = zipInputStream.nextEntry
             while (entry != null) {
                 val entryPath = tempPath.resolve(entry.name).normalize()
@@ -124,111 +175,126 @@ class ImageConvertUseCase(
             }
         }
 
-        Files.walk(tempPath).use { stream ->
-            stream.filter { Files.isRegularFile(it) }
-                .forEach { file ->
-                    runCatching { handleImageFile(file, fromFormat, toFormat) }
-                        .onSuccess { convertedFile ->
-                            if (convertedFile != null) {
-                                deleteOriginalIfDifferent(file, convertedFile)
-                                convertedCount++
-                            }
-                        }
-                        .onFailure {
-                            context.incrementFailed()
-                            context.printError(it)
-                        }
+        // Collect before converting: the conversion creates files in the tree being walked.
+        val files = Files.walk(tempPath).use { stream ->
+            stream.filter { Files.isRegularFile(it) }.toList()
+        }
+
+        var convertedCount = 0
+        files.forEach { file ->
+            runCatching { handleImageFile(file, fromFormat, toFormat) }
+                .onSuccess { converted ->
+                    if (converted) {
+                        convertedCount++
+                    }
+                }
+                .onFailure {
+                    context.incrementFailed()
+                    context.printError(it)
                 }
         }
 
-        zipFiles(tempPath, zipFilePath)
+        // Rewriting an archive is expensive, so archives without converted images are left untouched.
+        if (convertedCount > 0) {
+            zipFiles(tempPath, zipFilePath)
+        }
         return convertedCount
     }
 
-    private fun handleImageFile(filePath: Path, fromFormat: ImageFromFormat, toFormat: Format): Path? {
+    /** Converts [filePath] to [toFormat] when it is a target, replacing the original. Returns whether it was converted. */
+    private fun handleImageFile(filePath: Path, fromFormat: ImageFromFormat, toFormat: Format): Boolean {
         val extension = filePath.extension.lowercase()
-        if (extension !in imageExtensions) {
-            return null
+        if (!isConvertibleExtension(extension, fromFormat)) {
+            return false
         }
 
-        if (!fromFormat.matchesExtension(extension)) {
-            return null
+        // AVIF has no scrimage format and is always decoded through ImageIO.
+        val sourceFormat = if (extension == AVIF_EXTENSION) {
+            null
+        } else {
+            // Detecting the format from the header avoids reading whole files that are skipped anyway.
+            val detectedFormat = Files.newInputStream(filePath).use { FormatDetector.detect(it) }.getOrNull()
+            if (detectedFormat == null || !shouldConvert(detectedFormat, fromFormat, toFormat)) {
+                return false
+            }
+            detectedFormat
         }
 
-        val data = Files.readAllBytes(filePath)
         val convertedFilePath = filePath.resolveSibling(
             "${filePath.nameWithoutExtension}.${toFormat.toExtension().first()}"
         )
-
-        if (extension == AVIF_EXTENSION) {
-            writeImage(toFormat, imageIOReader.read(data), convertedFilePath)
-            return convertedFilePath
+        // On case-insensitive file systems "a.PNG" and "a.png" are the same file, which is replaced in place.
+        val replacesOriginal = isSameExistingFile(filePath, convertedFilePath)
+        if (!replacesOriginal && Files.exists(convertedFilePath)) {
+            throw FileAlreadyExistsException(filePath.toString(), convertedFilePath.toString(), "converted file already exists")
         }
 
-        val detectedFormat = FormatDetector.detect(data).getOrElse { return null }
-
-        if (!fromFormat.matches(detectedFormat) || detectedFormat == toFormat) {
-            return null
+        val data = Files.readAllBytes(filePath)
+        writeAtomically(convertedFilePath) { tempFile ->
+            convertImage(filePath, tempFile, data, sourceFormat, toFormat)
         }
-
-        convertImageSafely(filePath, convertedFilePath, data, detectedFormat, toFormat)
-        return convertedFilePath
+        if (!replacesOriginal) {
+            Files.deleteIfExists(filePath)
+        }
+        return true
     }
 
-    private fun convertImageSafely(
-        originalFilePath: Path,
-        convertedFilePath: Path,
-        data: ByteArray,
-        detectedFormat: Format,
-        toFormat: Format
-    ) {
-        if (originalFilePath.normalize() != convertedFilePath.normalize()) {
-            convertImage(convertedFilePath, data, detectedFormat, toFormat)
+    private fun convertImage(source: Path, target: Path, data: ByteArray, sourceFormat: Format?, toFormat: Format) {
+        if (sourceFormat == Format.GIF) {
+            val gif = AnimatedGifReader.read(ImageSource.of(data))
+            requireEncodable(source, toFormat, ImageSize(gif.dimensions.width, gif.dimensions.height))
+            when (toFormat) {
+                Format.WEBP -> gif.output(gif2WebpWriter, target)
+                else -> gif.frames.first().output(getSuitableImageWriter(toFormat), target)
+            }
             return
         }
 
-        val tempFile = Files.createTempFile(originalFilePath.toAbsolutePath().parent, "${originalFilePath.fileName}", ".tmp")
-        runCatching {
-            convertImage(tempFile, data, detectedFormat, toFormat)
-            moveReplacing(tempFile, convertedFilePath)
-        }.onFailure {
-            Files.deleteIfExists(tempFile)
-            throw it
+        val image = when (sourceFormat) {
+            Format.WEBP -> webpImageReader.read(data)
+            else -> imageIOReader.read(data)
+        }
+        requireEncodable(source, toFormat, ImageSize(image.width, image.height))
+        image.output(getSuitableImageWriter(toFormat), target)
+    }
+
+    private fun requireEncodable(source: Path, format: Format, size: ImageSize) {
+        require(format.canEncode(size.width, size.height)) {
+            val maxDimension = format.maxDimension()
+            "${source.fileName} is ${size.width} x ${size.height} pixels, " +
+                "but $format supports up to $maxDimension x $maxDimension pixels"
         }
     }
 
-    private fun convertImage(filePath: Path, data: ByteArray, fromFormat: Format, toFormat: Format) {
-        when (fromFormat) {
-            Format.GIF -> {
-                val image = AnimatedGifReader.read(ImageSource.of(data))
-                when (toFormat) {
-                    Format.WEBP -> image.output(gif2WebpWriter, filePath)
-                    else -> image.frames.first().output(getSuitableImageWriter(toFormat), filePath)
-                }
+    /** Returns the image size when [handleImageFile] would convert a file named [fileName], or null otherwise. */
+    private fun readConversionSize(
+        fileName: String,
+        input: InputStream,
+        fromFormat: ImageFromFormat,
+        toFormat: Format
+    ): ImageSize? {
+        val extension = fileName.substringAfterLast('.', missingDelimiterValue = "").lowercase()
+        if (!isConvertibleExtension(extension, fromFormat)) {
+            return null
+        }
+
+        val bufferedInput = input.buffered()
+        if (extension != AVIF_EXTENSION) {
+            bufferedInput.mark(FORMAT_HEADER_READ_LIMIT)
+            val detectedFormat = FormatDetector.detect(bufferedInput).getOrNull()
+            if (detectedFormat == null || !shouldConvert(detectedFormat, fromFormat, toFormat)) {
+                return null
             }
-
-            Format.WEBP -> writeImage(toFormat, webpImageReader.read(data), filePath)
-            else -> writeImage(toFormat, imageIOReader.read(data), filePath)
+            bufferedInput.reset()
         }
+        return readImageSize(bufferedInput)
     }
 
-    private fun writeImage(toFormat: Format, image: ImmutableImage, filePath: Path) {
-        image.output(getSuitableImageWriter(toFormat), filePath)
-    }
+    private fun isConvertibleExtension(extension: String, fromFormat: ImageFromFormat): Boolean =
+        extension in imageExtensions && fromFormat.matchesExtension(extension)
 
-    private fun deleteOriginalIfDifferent(originalFile: Path, convertedFile: Path) {
-        if (originalFile.normalize() != convertedFile.normalize()) {
-            Files.deleteIfExists(originalFile)
-        }
-    }
-
-    private fun moveReplacing(source: Path, target: Path) {
-        runCatching {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        }.getOrElse {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING)
-        }
-    }
+    private fun shouldConvert(detectedFormat: Format, fromFormat: ImageFromFormat, toFormat: Format): Boolean =
+        fromFormat.matches(detectedFormat) && detectedFormat != toFormat
 
     private val Path.isArchiveFile: Boolean
         get() = extension.lowercase() in archiveExtensions
@@ -244,5 +310,8 @@ class ImageConvertUseCase(
 
     private companion object {
         const val AVIF_EXTENSION = "avif"
+
+        // FormatDetector reads the first 12 bytes; the limit leaves headroom for reset().
+        const val FORMAT_HEADER_READ_LIMIT = 64
     }
 }
